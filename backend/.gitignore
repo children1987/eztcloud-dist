@@ -7,7 +7,6 @@ __pycache__/
 *.log
 *.log.*
 local_debug_scripts/
-/backend/log_level/
 
 # 虚拟环境
 .venv/
