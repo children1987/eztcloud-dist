@@ -1,0 +1,221 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-06-19 10:18+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: .\apps\equipments\serializers.py:108
+msgid "项目不存在"
+msgstr "project does not exist"
+
+#: .\apps\equipments\serializers.py:679
+msgid "设备类型不存在"
+msgstr "device category does not exist"
+
+#: .\apps\equipments\serializers.py:693
+msgid "设备组不存在"
+msgstr "device group does not exist"
+
+#: .\apps\equipments\serializers.py:694
+msgid "设备组id不合法"
+msgstr "device group id illegal"
+
+#: .\apps\equipments\serializers.py:709
+msgid "网关不存在"
+msgstr "gateway does not exist"
+
+#: .\apps\equipments\serializers.py:710
+msgid "网关id不合法"
+msgstr "gateway id illegal"
+
+#: .\apps\equipments\serializers.py:755
+msgid "该网关下已存在该设备ID {}！"
+msgstr "the device id {} already exists under this gateway"
+
+#: .\apps\equipments\serializers.py:762
+msgid "该产品下已存在该设备ID {}！"
+msgstr "the device id {} already exists under this product"
+
+#: .\apps\equipments\serializers.py:802
+msgid "check others field"
+msgstr "check others field"
+
+#: .\apps\equipments\serializers.py:872
+msgid "正常"
+msgstr "normal"
+
+#: .\apps\equipments\serializers.py:873
+msgid "告警待定"
+msgstr "pending"
+
+#: .\apps\equipments\serializers.py:874
+msgid "告警"
+msgstr "alerting"
+
+#: .\apps\equipments\serializers.py:883
+msgid "在线"
+msgstr "online"
+
+#: .\apps\equipments\serializers.py:883
+msgid "离线"
+msgstr "offline"
+
+#: .\apps\equipments\views.py:566 .\apps\equipments\views.py:805
+msgid "数据不符合json规范"
+msgstr "the data dont met json format"
+
+#: .\apps\equipments\views.py:568
+msgid "下发数据格式不正确"
+msgstr "data format error"
+
+#: .\apps\equipments\views.py:576
+msgid "属性【{}】不存在或类型不合法"
+msgstr "attributes 【{}】 not exists or data type error"
+
+#: .\apps\equipments\views.py:596 .\apps\equipments\views.py:674
+msgid "设备未关联设备类型"
+msgstr "Device not associated with device category"
+
+#: .\apps\equipments\views.py:624
+msgid "属性下发成功"
+msgstr "deliver attributes success"
+
+#: .\apps\equipments\views.py:644
+msgid "请检查下发数据格式"
+msgstr "please check data format"
+
+#: .\apps\equipments\views.py:654
+msgid "命令标识符{}未被定义"
+msgstr "command identifier {} not defined"
+
+#: .\apps\equipments\views.py:661
+msgid "命令请求参数{}未被定义"
+msgstr "command params {} not defined"
+
+#: .\apps\equipments\views.py:684
+msgid "命令下发成功"
+msgstr "command send success"
+
+#: .\apps\equipments\views.py:721
+#, fuzzy, python-brace-format
+#| msgid "设备未关联设备类型"
+msgid "设备{device_username}未关联设备类型!"
+msgstr "Device not associated with device category"
+
+#: .\apps\equipments\views.py:778
+msgid "设备OTA升级检测失败！"
+msgstr "Device OTA upgrade detection failed!"
+
+#: .\apps\equipments\views.py:781
+msgid "设备OTA升级检测完成"
+msgstr "Device OTA upgrade detection completed"
+
+#: .\apps\equipments\views.py:811
+msgid "{}尚未配置网关"
+msgstr "{} gateway not configured"
+
+#: .\apps\equipments\views.py:819
+msgid "【{}】尚未配置自定义数据流【{}】"
+msgstr "【{}】 custom data flow not configured"
+
+#: .\apps\equipments\views.py:822
+msgid "【{}】尚未启用自定义数据流【{}】"
+msgstr "custom data flow of 【{}】 has not been enabled yet 【{}】"
+
+#: .\apps\equipments\views.py:826
+msgid "下发的数据格式应为{\"msg\":\"需要下发的数据\"}"
+msgstr "data format should be {\"msg\":\"data to deliver\"}"
+
+#: .\apps\equipments\views.py:829
+msgid "msg内容应为json格式"
+msgstr "the content of msg must be json "
+
+#: .\apps\equipments\views.py:834
+msgid "msg内容应为ModBus RTU格式"
+msgstr "the content of msg must be ModBus RTU"
+
+#: .\apps\equipments\views.py:851
+msgid ""
+"下发的数据格式应为{\"params\":{\"key1\":\"val1\"}, \"msg\":”需要下发的数据“}"
+msgstr ""
+"data format should be {\"params\":{\"key1\":\"val1\"}, \"msg\":”data to "
+"deliver“}"
+
+#: .\apps\equipments\views.py:859
+msgid "自定义数据下发成功"
+msgstr "custom data delivered"
+
+#: .\apps\users\forms.py:16
+msgid "This username has already been taken."
+msgstr "This username has already been taken."
+
+#: .\apps\users\serializers.py:37
+msgid ""
+"请输入合法的用户名. 只包含小写字母,数字, 和 @/./+/-/_ 最少两位且不能以数字开"
+"头"
+msgstr ""
+"Please enter a valid username. It only contains lowercase letters,numbers, "
+"and at least two digits of @/./+/-/_ and cannot start with a number."
+
+#: .\apps\users\views.py:982
+msgid "method should be in ('mobile', 'email')"
+msgstr "method should be in ('mobile', 'email')"
+
+#: .\config\settings\base.py:69
+msgid "English"
+msgstr "English"
+
+#: .\config\settings\base.py:70
+msgid "Simplified Chinese"
+msgstr "Simplified Chinese"
+
+#: .\m_common\attr_fix.py:64
+#, python-brace-format
+msgid "属性key: <{key}> 数据: <{value}> {msg} \n"
+msgstr "attribute key <{key}>, data <{value}> {msg} \n"
+
+#: .\m_common\attr_fix_mapping.py:48
+msgid "不为浮点型"
+msgstr "is not float type"
+
+#: .\m_common\attr_fix_mapping.py:68
+msgid "大于最大值({float(max_limit)})"
+msgstr "greater than maximum value({float(max_limit)})"
+
+#: .\m_common\attr_fix_mapping.py:78
+msgid "小于最小值({float(min_limit)})"
+msgstr "less than minimum value({float(min_limit)})"
+
+#: .\m_common\attr_fix_mapping.py:100
+msgid "不为Boolean类型"
+msgstr "is not Boolean type"
+
+#: .\m_common\attr_fix_mapping.py:115
+msgid "不为文本类型"
+msgstr "is not Text type"
+
+#: .\m_common\attr_fix_mapping.py:131
+msgid "未定义枚举值"
+msgstr "is undefined enumeration value"
+
+#: .\m_common\attr_fix_mapping.py:149 .\m_common\attr_fix_mapping.py:152
+msgid "不为键值对类型"
+msgstr "is not object type"
+
+#: .\m_common\attr_fix_mapping.py:170 .\m_common\attr_fix_mapping.py:173
+msgid "不为列表类型"
+msgstr "is not list type"

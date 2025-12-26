@@ -1,0 +1,23 @@
+/node_modules
+/backend/PIPENV_VENV_IN_PROJECT
+__pycache__/
+*.pyc
+.idea/
+.env
+*.log
+*.log.*
+local_debug_scripts/
+/backend/log_level/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+ENV/
+
+# uv 相关
+.uv/
+
+# 临时文件
+requirements-temp.txt
+*.tmp

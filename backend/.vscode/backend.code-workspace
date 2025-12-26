@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../deploy"
+		},
+		{
+			"path": "../../mqtt_broker"
+		},
+		{
+			"path": "../../../../../env/backend-FjLNj3e7/Lib/site-packages"
+		}
+	],
+	"settings": {}
+}

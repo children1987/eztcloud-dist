@@ -1,0 +1,166 @@
+
+======================================================
+告警信息
+------------------------------------------------------
+呼救：
+{
+	"body": {
+		"crypt": 0,
+		"alarmTime": "2025-09-02T11:15:24",
+		"channel": 1,
+		"channelType": 1,
+		"relationId": "",
+		"customInfo": "",
+		"requestTime": 1756782933700,
+		"devSerial": "GC4285371",
+		"alarmType": "CallForHelpAlarm",
+		"customType": "",
+		"alarmId": "20250902111526-GC4285371-1-10294",
+		"checksum": "",
+		"channelName": "HF-V3N-P(4mm)(GC4285371)",
+		"location": "",
+		"describe": "CallForHelpAlarm",
+		"pictureList": [{
+			"id": "20250902111526-GC4285371-1-10294-2-1",
+			"url": "https://i.ys7.com/streamer/alarm/url/get?fileId=20250902111526-GC4285371-1-10294-2-1&deviceSerialNo=GC4285371&cn=1&isEncrypted=0&isCloudStored=0&ct=30&lc=7&bn=30_hikalarm-txsh-1256683041&isDevVideo=0"
+		}],
+		"status": 1
+	},
+	"header": {
+		"channelNo": 1,
+		"deviceId": "GC4285371",
+		"messageId": "68b6615563175d34456d693c",
+		"messageTime": 1756782933700,
+		"type": "ys.alarm"
+	}
+}
+火警触发：
+{
+	"body": {
+		"crypt": 0,
+		"alarmTime": "2025-10-21T15:04:02",
+		"channel": 1,
+		"channelType": 1,
+		"relationId": "",
+		"customInfo": "",
+		"requestTime": 1761030245697,
+		"devSerial": "GC4285371",
+		"alarmType": "fireTrig",
+		"customType": "",
+		"alarmId": "20251021150403-GC4285371-1-12011",
+		"checksum": "",
+		"channelName": "HF-V3N-P(4mm)(GC4285371)xxx",
+		"location": "",
+		"describe": "fireTrig",
+		"pictureList": [{
+			"id": "20251021150403-GC4285371-1-12011-2-1",
+			"url": "https://i.ys7.com/streamer/alarm/url/get?fileId=20251021150403-GC4285371-1-12011-2-1&deviceSerialNo=GC4285371&cn=1&isEncrypted=0&isCloudStored=0&ct=4&lc=7&bn=4_hikalarm&isDevVideo=0"
+		}],
+		"status": 1
+	},
+	"header": {
+		"channelNo": 1,
+		"deviceId": "GC4285371",
+		"messageId": "68f7306532a0ca0f836527d0",
+		"messageTime": 1761030245697,
+		"type": "ys.alarm"
+	}
+}
+火警恢复：
+{
+	"body": {
+		"crypt": 0,
+		"alarmTime": "2025-10-21T15:04:16",
+		"channel": 1,
+		"channelType": 1,
+		"relationId": "",
+		"customInfo": "",
+		"requestTime": 1761030259639,
+		"devSerial": "GC4285371",
+		"alarmType": "fireRest",
+		"customType": "",
+		"alarmId": "20251021150417-GC4285371-1-12012",
+		"checksum": "",
+		"channelName": "HF-V3N-P(4mm)(GC4285371)xxx",
+		"location": "",
+		"describe": "fireRest",
+		"pictureList": [{
+			"id": "20251021150417-GC4285371-1-12012-2-1",
+			"url": "https://i.ys7.com/streamer/alarm/url/get?fileId=20251021150417-GC4285371-1-12012-2-1&deviceSerialNo=GC4285371&cn=1&isEncrypted=0&isCloudStored=0&ct=4&lc=7&bn=4_hikalarm&isDevVideo=0"
+		}],
+		"status": 1
+	},
+	"header": {
+		"channelNo": 1,
+		"deviceId": "GC4285371",
+		"messageId": "68f73073b731633fcd0a03be",
+		"messageTime": 1761030259639,
+		"type": "ys.alarm"
+	}
+}
+
+======================================================
+ISAPI上行消息
+{
+	"body": {
+		"payload": "{\n\t"ipAddress":\t"192.168.1.64",\n\t"ipv6Address":\t"",\n\t"portNo":\t8000,\n\t"protocol":\t"HTTP",\n\t"macAddress":\t"a4:d5:c2:af:bb:59",\n\t"channelID":\t1,\n\t"channelName":\t"Camera 01",\n\t"dateTime":\t"2025-09-02T11:17:02+08:00",\n\t"activePostCount":\t1,\n\t"eventState":\t"active",\n\t"deviceID":\t"GC4285371",\n\t"UUID":\t"516a06b3b0c3bd96702b801bc192",\n\t"eventType":\t"audioAnalysis",\n\t"eventDescription":\t"audio analysis",\n\t"audioID":\t1,\n\t"AudioInfo":\t{\n\t\t"targetType":\t"help"\n\t},\n\t"Image":\t{\n\t\t"resourcesContentType":\t"url",\n\t\t"resourcesContent":\t""\n\t}\n}"
+	},
+	"header": {
+		"channelNo": 0,
+		"deviceId": "GC4285371",
+		"messageId": "68b661b2066c5539f6fb712d",
+		"messageTime": 1756783026051,
+		"type": "ys.open.isapi"
+	}
+}
+
+其中，body.payload 转换后：
+{
+	"ipAddress": "192.168.1.64",
+	"ipv6Address": "",
+	"portNo": 8000,
+	"protocol": "HTTP",
+	"macAddress": "a4:d5:c2:af:bb:59",
+	"channelID": 1,
+	"channelName": "Camera 01",
+	"dateTime": "2025-09-02T11:17:02+08:00",
+	"activePostCount": 1,
+	"eventState": "active",
+	"deviceID": "GC4285371",
+	"UUID": "516a06b3b0c3bd96702b801bc192",
+	"eventType": "audioAnalysis",
+	"eventDescription": "audio analysis",
+	"audioID": 1,
+	"AudioInfo": {
+		"targetType": "help"
+	},
+	"Image": {
+		"resourcesContentType": "url",
+		"resourcesContent": ""
+	}
+}
+
+======================================================
+上下线信息
+{
+	"body": {
+		"devType": "HF-FVW301-P",
+		"IsCleanSession": 1,
+		"regTime": "2025-09-01 18:03:24",
+		"natIp": "",
+		"msgType": "OFFLINE",
+		"subSerial": "GC4285371",
+		"occurTime": "2025-09-02 14:36:18",
+		"deviceName": "HF-V3N-P(4mm)(GC4285371)",
+		"dasId": "das30zjk_10.210.121.150_7029_1746707738@ali-pop-zjk"
+	},
+	"header": {
+		"channelNo": 0,
+		"deviceId": "GC4285371",
+		"messageId": "68b6906d066c5539f69e811e",
+		"messageTime": 1756794989195,
+		"type": "ys.onoffline"
+	}
+}
+
+

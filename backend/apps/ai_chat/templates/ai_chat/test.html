@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>AI聊天测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .chat-area { height: 400px; border: 1px solid #ddd; padding: 10px; margin: 20px 0; overflow-y: auto; }
+        .message { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .user-message { background-color: #007bff; color: white; margin-left: 20%; }
+        .ai-message { background-color: #e9ecef; color: #333; margin-right: 20%; }
+        .input-area { display: flex; gap: 10px; }
+        .message-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .send-btn { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        
+        /* Markdown样式 */
+        .ai-message h1, .ai-message h2, .ai-message h3, .ai-message h4, .ai-message h5, .ai-message h6 {
+            margin: 10px 0 5px 0;
+            color: #333;
+        }
+        .ai-message h1 { font-size: 1.5em; }
+        .ai-message h2 { font-size: 1.3em; }
+        .ai-message h3 { font-size: 1.1em; }
+        .ai-message p { margin: 5px 0; line-height: 1.5; }
+        .ai-message ul, .ai-message ol { margin: 5px 0; padding-left: 20px; }
+        .ai-message li { margin: 2px 0; }
+        .ai-message code { background-color: #f4f4f4; padding: 2px 4px; border-radius: 3px; font-family: monospace; }
+        .ai-message pre { background-color: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; margin: 10px 0; }
+        .ai-message pre code { background-color: transparent; padding: 0; }
+        .ai-message blockquote { border-left: 4px solid #007bff; margin: 10px 0; padding-left: 10px; color: #666; }
+        .ai-message strong { font-weight: bold; }
+        .ai-message em { font-style: italic; }
+        .ai-message a { color: #007bff; text-decoration: none; }
+        .ai-message a:hover { text-decoration: underline; }
+        .ai-message table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        .ai-message th, .ai-message td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .ai-message th { background-color: #f4f4f4; }
+    </style>
+    <!-- 添加Markdown解析库 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+    <script>
+        // 全局变量，确保Markdown解析器可用
+        let markdownReady = false;
+        
+        // 确保Markdown库加载完成
+        function ensureMarkdownReady() {
+            if (markdownReady) return Promise.resolve();
+            
+            return new Promise((resolve) => {
+                if (typeof marked !== 'undefined') {
+                    initMarkdown();
+                    resolve();
+                } else {
+                    console.error('Markdown库加载失败，尝试备用CDN');
+                    // 备用CDN
+                    const script = document.createElement('script');
+                    script.src = 'https://unpkg.com/marked@4.3.0/marked.min.js';
+                    script.onload = function() {
+                        console.log('备用CDN加载成功');
+                        initMarkdown();
+                        resolve();
+                    };
+                    script.onerror = function() {
+                        console.error('所有CDN都加载失败，使用本地解析');
+                        initLocalMarkdown();
+                        resolve();
+                    };
+                    document.head.appendChild(script);
+                }
+            });
+        }
+        
+        function initMarkdown() {
+            // 配置Markdown解析器
+            marked.setOptions({
+                breaks: true,  // 支持换行
+                gfm: true,     // 支持GitHub风格的Markdown
+                sanitize: false // 允许HTML标签
+            });
+            markdownReady = true;
+            console.log('Markdown库初始化成功');
+        }
+        
+        function initLocalMarkdown() {
+            // 简单的本地Markdown解析器
+            window.marked = {
+                parse: function(text) {
+                    return text
+                        .replace(/###(.*?)(?=\n|$)/g, '<h3>$1</h3>')
+                        .replace(/##(.*?)(?=\n|$)/g, '<h2>$1</h2>')
+                        .replace(/#(.*?)(?=\n|$)/g, '<h1>$1</h1>')
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                        .replace(/`(.*?)`/g, '<code>$1</code>')
+                        .replace(/- (.*?)(?=\n|$)/g, '<li>$1</li>')
+                        .replace(/(\d+)\. (.*?)(?=\n|$)/g, '<li>$2</li>')
+                        .replace(/\n/g, '<br>');
+                }
+            };
+            markdownReady = true;
+            console.log('本地Markdown解析器初始化成功');
+        }
+        
+        // 页面加载时初始化
+        window.addEventListener('load', function() {
+            ensureMarkdownReady();
+        });
+    </script>
+</head>
+<body>
+    <h1>AI聊天测试</h1>
+    
+    <div class="chat-area" id="chatArea">
+        <div class="message ai-message">您好！我是EZtCloud智能助手，有什么可以帮您？</div>
+    </div>
+    
+    <div class="input-area">
+        <input type="text" id="messageInput" class="message-input" placeholder="输入消息..." onkeypress="handleKeyPress(event)">
+        <button id="sendBtn" class="send-btn" onclick="sendMessage()">发送</button>
+    </div>
+
+    <script>
+        let currentSessionId = '';
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        function addMessage(content, isUser = false) {
+            const chatArea = document.getElementById('chatArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+            messageDiv.textContent = content;
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') sendMessage();
+        }
+        
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+            
+            addMessage(message, true);
+            messageInput.value = '';
+            sendBtn.disabled = true;
+            
+            // 清空之前的AI回复区域，准备接收新的回复
+            const chatArea = document.getElementById('chatArea');
+            const lastMessage = chatArea.lastElementChild;
+            if (lastMessage && lastMessage.classList.contains('ai-message')) {
+                lastMessage.remove();
+            }
+            
+            try {
+                console.log('发送请求:', {
+                    message: message,
+                    session_id: currentSessionId,
+                    stream: true
+                });
+                
+                const response = await fetch('/api/ai/chat/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    credentials: 'include',  // 包含cookies，使用DRF默认的session认证
+                    body: JSON.stringify({
+                        message: message,
+                        session_id: currentSessionId,
+                        stream: true
+                    })
+                });
+                
+                console.log('响应状态:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('响应错误:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let aiResponse = '';
+                
+                console.log('开始读取流式响应...');
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) {
+                        console.log('流式响应读取完成');
+                        break;
+                    }
+                    
+                    const chunk = decoder.decode(value);
+                    console.log('收到数据块:', chunk);
+                    
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                console.log('解析的数据:', data);
+                                
+                                if (data.error) {
+                                    throw new Error(data.message || '未知错误');
+                                }
+                                
+                                if (data.session_id) {
+                                    currentSessionId = data.session_id;
+                                    console.log('更新会话ID:', currentSessionId);
+                                }
+                                
+                                if (data.text) {
+                                    aiResponse += data.text;
+                                    updateAIMessage(aiResponse).catch(e => {
+                                        console.error('更新AI消息失败:', e);
+                                    });
+                                    console.log('收到字符:', data.text, '累积回复长度:', aiResponse.length, '累积回复:', aiResponse);
+                                }
+                                
+                                if (data.is_final) {
+                                    console.log('对话完成');
+                                    return; // 直接返回，结束整个函数
+                                }
+                            } catch (e) {
+                                console.error('解析响应数据失败:', e, '原始行:', line);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('发送消息失败:', error);
+                addMessage('抱歉，发送消息时出现错误。', false);
+            } finally {
+                sendBtn.disabled = false;
+                messageInput.focus();
+                console.log('消息发送流程结束');
+            }
+        }
+        
+        async function updateAIMessage(content) {
+            const chatArea = document.getElementById('chatArea');
+            let aiMessageDiv = chatArea.querySelector('.ai-message:last-child');
+            
+            // 检查是否需要创建新的AI消息div
+            const lastMessage = chatArea.lastElementChild;
+            if (!lastMessage || lastMessage.classList.contains('user-message')) {
+                // 如果最后一条消息是用户消息，或者没有消息，创建新的AI消息
+                aiMessageDiv = document.createElement('div');
+                aiMessageDiv.className = 'message ai-message';
+                chatArea.appendChild(aiMessageDiv);
+            } else if (lastMessage.classList.contains('ai-message')) {
+                // 如果最后一条消息是AI消息，使用它
+                aiMessageDiv = lastMessage;
+            } else {
+                // 其他情况，创建新的AI消息
+                aiMessageDiv = document.createElement('div');
+                aiMessageDiv.className = 'message ai-message';
+                chatArea.appendChild(aiMessageDiv);
+            }
+            
+            // 确保Markdown解析器准备就绪
+            await ensureMarkdownReady();
+            
+            // 使用Markdown解析器渲染内容
+            try {
+                console.log('正在解析Markdown内容:', content.substring(0, 100) + '...');
+                console.log('Markdown解析器状态:', typeof marked, marked ? '已加载' : '未加载');
+                
+                if (typeof marked === 'undefined') {
+                    throw new Error('Markdown解析器未加载');
+                }
+                
+                const parsedHtml = marked.parse(content);
+                console.log('Markdown解析结果:', parsedHtml.substring(0, 100) + '...');
+                
+                aiMessageDiv.innerHTML = parsedHtml;
+                console.log('Markdown渲染成功');
+            } catch (e) {
+                // 如果Markdown解析失败，回退到纯文本
+                console.error('Markdown解析失败，使用纯文本显示:', e);
+                aiMessageDiv.textContent = content;
+            }
+            
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+    </script>
+</body>
+</html>

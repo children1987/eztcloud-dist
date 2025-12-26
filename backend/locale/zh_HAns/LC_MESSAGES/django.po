@@ -1,0 +1,220 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-06-19 10:21+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: .\apps\equipments\serializers.py:108
+msgid "项目不存在"
+msgstr "项目不存在"
+
+#: .\apps\equipments\serializers.py:679
+msgid "设备类型不存在"
+msgstr "设备类型不存在"
+
+#: .\apps\equipments\serializers.py:693
+msgid "设备组不存在"
+msgstr "设备组不存在"
+
+#: .\apps\equipments\serializers.py:694
+msgid "设备组id不合法"
+msgstr "设备组id不合法"
+
+#: .\apps\equipments\serializers.py:709
+msgid "网关不存在"
+msgstr "网关不存在"
+
+#: .\apps\equipments\serializers.py:710
+msgid "网关id不合法"
+msgstr "网关id不合法"
+
+#: .\apps\equipments\serializers.py:755
+msgid "该网关下已存在该设备ID {}！"
+msgstr "该网关下已存在该设备ID {}！"
+
+#: .\apps\equipments\serializers.py:762
+msgid "该产品下已存在该设备ID {}！"
+msgstr "该产品下已存在该设备ID {}！"
+
+#: .\apps\equipments\serializers.py:802
+msgid "check others field"
+msgstr "请检查其它字段"
+
+#: .\apps\equipments\serializers.py:872
+msgid "正常"
+msgstr "正常"
+
+#: .\apps\equipments\serializers.py:873
+msgid "告警待定"
+msgstr "告警待定"
+
+#: .\apps\equipments\serializers.py:874
+msgid "告警"
+msgstr "告警"
+
+#: .\apps\equipments\serializers.py:883
+msgid "在线"
+msgstr "在线"
+
+#: .\apps\equipments\serializers.py:883
+msgid "离线"
+msgstr "离线"
+
+#: .\apps\equipments\views.py:566 .\apps\equipments\views.py:805
+msgid "数据不符合json规范"
+msgstr "数据不符合json规范"
+
+#: .\apps\equipments\views.py:568
+msgid "下发数据格式不正确"
+msgstr "下发数据格式不正确"
+
+#: .\apps\equipments\views.py:576
+msgid "属性【{}】不存在或类型不合法"
+msgstr "属性【{}】不存在或类型不合法"
+
+#: .\apps\equipments\views.py:596 .\apps\equipments\views.py:674
+msgid "设备未关联设备类型"
+msgstr "设备未关联设备类型"
+
+#: .\apps\equipments\views.py:624
+msgid "属性下发成功"
+msgstr "属性下发成功"
+
+#: .\apps\equipments\views.py:644
+msgid "请检查下发数据格式"
+msgstr "请检查下发数据格式"
+
+#: .\apps\equipments\views.py:654
+msgid "命令标识符{}未被定义"
+msgstr "命令标识符{}未被定义"
+
+#: .\apps\equipments\views.py:661
+msgid "命令请求参数{}未被定义"
+msgstr "命令请求参数{}未被定义"
+
+#: .\apps\equipments\views.py:684
+msgid "命令下发成功"
+msgstr "命令下发成功"
+
+#: .\apps\equipments\views.py:721
+#, fuzzy, python-brace-format
+#| msgid "设备未关联设备类型"
+msgid "设备{device_username}未关联设备类型!"
+msgstr "设备未关联设备类型"
+
+#: .\apps\equipments\views.py:778
+msgid "设备OTA升级检测失败！"
+msgstr ""
+
+#: .\apps\equipments\views.py:781
+msgid "设备OTA升级检测完成"
+msgstr ""
+
+#: .\apps\equipments\views.py:811
+msgid "{}尚未配置网关"
+msgstr "{}尚未配置网关"
+
+#: .\apps\equipments\views.py:819
+msgid "【{}】尚未配置自定义数据流【{}】"
+msgstr "【{}】尚未配置自定义数据流【{}】"
+
+#: .\apps\equipments\views.py:822
+msgid "【{}】尚未启用自定义数据流【{}】"
+msgstr "【{}】尚未启用自定义数据流【{}】"
+
+#: .\apps\equipments\views.py:826
+msgid "下发的数据格式应为{\"msg\":\"需要下发的数据\"}"
+msgstr "下发的数据格式应为{\"msg\":\"需要下发的数据\"}"
+
+#: .\apps\equipments\views.py:829
+msgid "msg内容应为json格式"
+msgstr "msg内容应为json格式"
+
+#: .\apps\equipments\views.py:834
+msgid "msg内容应为ModBus RTU格式"
+msgstr "msg内容应为ModBus RTU格式"
+
+#: .\apps\equipments\views.py:851
+msgid ""
+"下发的数据格式应为{\"params\":{\"key1\":\"val1\"}, \"msg\":”需要下发的数据“}"
+msgstr ""
+"下发的数据格式应为{\"params\":{\"key1\":\"val1\"}, \"msg\":”需要下发的数据“}"
+
+#: .\apps\equipments\views.py:859
+msgid "自定义数据下发成功"
+msgstr "自定义数据下发成功"
+
+#: .\apps\users\forms.py:16
+msgid "This username has already been taken."
+msgstr "用户名已使用。"
+
+#: .\apps\users\serializers.py:37
+msgid ""
+"请输入合法的用户名. 只包含小写字母,数字, 和 @/./+/-/_ 最少两位且不能以数字开"
+"头"
+msgstr ""
+"请输入合法的用户名. 只包含小写字母,数字, 和 @/./+/-/_ 最少两位且不能以数字开"
+"头"
+
+#: .\apps\users\views.py:982
+msgid "method should be in ('mobile', 'email')"
+msgstr "method 应该为 ('mobile', 'email') 之一"
+
+#: .\config\settings\base.py:69
+msgid "English"
+msgstr "英文"
+
+#: .\config\settings\base.py:70
+msgid "Simplified Chinese"
+msgstr "简体中文"
+
+#: .\m_common\attr_fix.py:64
+#, python-brace-format
+msgid "属性key: <{key}> 数据: <{value}> {msg} \n"
+msgstr ""
+
+#: .\m_common\attr_fix_mapping.py:48
+msgid "不为浮点型"
+msgstr ""
+
+#: .\m_common\attr_fix_mapping.py:68
+msgid "大于最大值({float(max_limit)})"
+msgstr ""
+
+#: .\m_common\attr_fix_mapping.py:78
+msgid "小于最小值({float(min_limit)})"
+msgstr ""
+
+#: .\m_common\attr_fix_mapping.py:100
+msgid "不为Boolean类型"
+msgstr ""
+
+#: .\m_common\attr_fix_mapping.py:115
+msgid "不为文本类型"
+msgstr ""
+
+#: .\m_common\attr_fix_mapping.py:131
+msgid "未定义枚举值"
+msgstr ""
+
+#: .\m_common\attr_fix_mapping.py:149 .\m_common\attr_fix_mapping.py:152
+msgid "不为键值对类型"
+msgstr ""
+
+#: .\m_common\attr_fix_mapping.py:170 .\m_common\attr_fix_mapping.py:173
+msgid "不为列表类型"
+msgstr ""

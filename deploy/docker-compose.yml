@@ -1,0 +1,525 @@
+version: "3.3"
+
+services:
+  isw_v2_redis:
+    container_name: isw_v2_redis
+    image: redis
+    command: redis-server /etc/redis/redis.conf
+    volumes:
+      - /workspace/isw_v2/redis_data:/data
+      - /workspace/isw_v2/deploy/redis/redis.conf:/etc/redis/redis.conf
+    restart: always
+    network_mode: "host"
+  isw_v2_web_server:
+    image: isw:latest
+    container_name: isw_v2_web_server
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+      # 挂载主板UUID文件（只读）
+      - /sys/devices/virtual/dmi/id/product_uuid:/sys/devices/virtual/dmi/id/product_uuid:ro
+      # 挂载machine-id文件（只读）
+      - /etc/machine-id:/etc/machine-id:ro
+    build:
+      context: /workspace/isw_v2
+      dockerfile: deploy/Dockerfile
+    #depends_on:
+    #  - isw_v2_redis
+    command: >
+      /bin/sh -c "
+        cd /workspace/isw_v2/backend;
+        python ensure_hstore.py || true;
+        MANAGE_FILE=$$(if [ -f manage.py ]; then echo 'manage.py'; else echo 'manage.pyc'; fi);
+        CONF_SETTINGS_FILE='config.settings.base';
+        python $$MANAGE_FILE migrate --settings $$CONF_SETTINGS_FILE;
+        python $$MANAGE_FILE collectstatic --noinput --settings $$CONF_SETTINGS_FILE;
+        uvicorn config.asgi:application --host 127.0.0.1 --port 8025 --workers 4 --log-config ../deploy/uvicorn/log_config.json >> ./log/uvicorn.log 2>&1
+      "
+    restart: always
+    network_mode: "host"
+  isw_v2_celery:
+    image: isw:latest
+    container_name: isw_v2_celery
+    build:
+      context: /workspace/isw_v2
+      dockerfile: deploy/Dockerfile
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /workspace/isw_v2/backend
+        celery -A apps.celery_tasks.main worker -l error -f ./log/celery.log
+    #depends_on:
+    #  - isw_v2_redis
+    restart: always
+    network_mode: "host"
+  isw_v2_mqtt_receiver:
+    image: isw:latest
+    container_name: isw_v2_mqtt_receiver
+    build:
+      context: /workspace/isw_v2
+      dockerfile: deploy/Dockerfile
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /workspace/isw_v2/backend/mqtt_receiver
+        if [ -f main.py ]; then python main.py; else python main.pyc; fi
+    restart: always
+    network_mode: "host"
+  isw_v2_down_sender:
+    image: isw:latest
+    container_name: isw_v2_down_sender
+    build:
+      context: /workspace/isw_v2
+      dockerfile: deploy/Dockerfile
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /workspace/isw_v2/backend/down_sender
+        if [ -f main.py ]; then python main.py; else python main.pyc; fi
+    restart: always
+    network_mode: "host"
+  isw_v2_up_worker:
+    image: isw:latest
+    container_name: isw_v2_up_worker
+    build:
+      context: /workspace/isw_v2
+      dockerfile: deploy/Dockerfile
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /workspace/isw_v2/backend/up_worker
+        if [ -f main.py ]; then python main.py; else python main.pyc; fi
+    restart: always
+    network_mode: "host"
+  isw_v2_tcp_server:
+    image: isw:latest
+    container_name: isw_v2_tcp_server
+    build:
+      context: /workspace/isw_v2
+      dockerfile: deploy/Dockerfile
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /workspace/isw_v2/backend/tcp_server
+        if [ -f main.py ]; then python main.py; else python main.pyc; fi
+    restart: always
+    network_mode: "host"
+  isw_v2_device_monitor:
+    image: isw:latest
+    container_name: isw_v2_device_monitor
+    build:
+      context: /workspace/isw_v2
+      dockerfile: deploy/Dockerfile
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /workspace/isw_v2/backend/device_monitor
+        if [ -f main.py ]; then python main.py; else python main.pyc; fi
+    restart: always
+    depends_on:
+      - isw_v2_web_server
+    network_mode: "host"
+  isw_v2_celery_beat:
+    image: isw:latest
+    container_name: isw_v2_celery_beat
+    build:
+      context: /workspace/isw_v2
+      dockerfile: deploy/Dockerfile
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /workspace/isw_v2/backend
+        # 等待数据库迁移完成（最多等待 180 秒）
+        echo "等待数据库迁移完成..."
+        for i in $$(seq 1 180); do
+          MANAGE_FILE=$$(if [ -f manage.py ]; then echo 'manage.py'; else echo 'manage.pyc'; fi);
+          CONF_SETTINGS_FILE='config.settings.base';
+          if python $$MANAGE_FILE migrate --check --settings $$CONF_SETTINGS_FILE 2>/dev/null; then
+            echo "数据库迁移已完成"
+            break
+          fi
+          if [ $$i -eq 180 ]; then
+            echo "警告: 数据库迁移在 180 秒内未完成，继续启动 celery beat..."
+          fi
+          sleep 1
+        done
+        # 启动 celery beat，将日志输出到文件，减少 stderr 输出
+        cd /workspace/isw_v2/backend/apps
+        mkdir -p ../log
+        celery -A celery_tasks.main beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler -f ../log/celery_beat.log
+    network_mode: "host"
+    depends_on:
+      - isw_v2_web_server
+    restart: always
+  isw_v2_data_saver:
+    image: isw:latest
+    container_name: isw_v2_data_saver
+    build:
+      context: /workspace/isw_v2
+      dockerfile: deploy/Dockerfile
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /workspace/isw_v2/backend/data_saver
+        if [ -f main.py ]; then python main.py; else python main.pyc; fi
+    restart: always
+    network_mode: "host"
+  isw_v2_log_alarm_saver:
+    image: log_saver_by_telegraf:latest
+    container_name: isw_v2_log_alarm_saver
+    build:
+      context: .
+      dockerfile: telegraf/Dockerfile
+    environment:
+      - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
+      - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
+      - DOCKER_INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
+      - MQTT_HOST=${MQTT_HOST}
+      - MQTT_PORT=${MQTT_PORT}
+      - INFLUXDB_URL=${INFLUXDB_URL}
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+      - /workspace/isw_v2/backend/log_savers/log_alarm_saver/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    restart: unless-stopped
+    network_mode: "host"
+  isw_v2_log_msg_saver:
+    image: log_saver_by_telegraf:latest
+    container_name: isw_v2_log_msg_saver
+    build:
+      context: .
+      dockerfile: telegraf/Dockerfile
+    environment:
+      - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
+      - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
+      - DOCKER_INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
+      - MQTT_HOST=${MQTT_HOST}
+      - MQTT_PORT=${MQTT_PORT}
+      - INFLUXDB_URL=${INFLUXDB_URL}
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+      - /workspace/isw_v2/backend/log_savers/log_msg_saver/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    restart: always
+    network_mode: "host"
+  isw_v2_log_rule_saver:
+    image: log_saver_by_telegraf:latest
+    container_name: isw_v2_log_rule_saver
+    build:
+      context: .
+      dockerfile: telegraf/Dockerfile
+    environment:
+      - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
+      - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
+      - DOCKER_INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
+      - MQTT_HOST=${MQTT_HOST}
+      - MQTT_PORT=${MQTT_PORT}
+      - INFLUXDB_URL=${INFLUXDB_URL}
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+      - /workspace/isw_v2/backend/log_savers/log_rule_saver/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    restart: always
+    network_mode: "host"
+  isw_v2_log_task_saver:
+    image: log_saver_by_telegraf:latest
+    container_name: isw_v2_log_task_saver
+    build:
+      context: .
+      dockerfile: telegraf/Dockerfile
+    environment:
+      - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
+      - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
+      - DOCKER_INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
+      - MQTT_HOST=${MQTT_HOST}
+      - MQTT_PORT=${MQTT_PORT}
+      - INFLUXDB_URL=${INFLUXDB_URL}
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+      - /workspace/isw_v2/backend/log_savers/log_task_saver/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    restart: always
+    network_mode: "host"
+  isw_v2_log_scene_saver:
+    image: log_saver_by_telegraf:latest
+    container_name: isw_v2_log_scene_saver
+    build:
+      context: .
+      dockerfile: telegraf/Dockerfile
+    environment:
+      - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
+      - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
+      - DOCKER_INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
+      - MQTT_HOST=${MQTT_HOST}
+      - MQTT_PORT=${MQTT_PORT}
+      - INFLUXDB_URL=${INFLUXDB_URL}
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+      - /workspace/isw_v2/backend/log_savers/log_scene_saver/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    restart: always
+    network_mode: "host"
+  isw_v2_log_event_saver:
+    image: log_saver_by_telegraf:latest
+    container_name: isw_v2_log_event_saver
+    build:
+      context: .
+      dockerfile: telegraf/Dockerfile
+    environment:
+      - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
+      - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
+      - DOCKER_INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
+      - MQTT_HOST=${MQTT_HOST}
+      - MQTT_PORT=${MQTT_PORT}
+      - INFLUXDB_URL=${INFLUXDB_URL}
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+      - /workspace/isw_v2/backend/log_savers/log_event_saver/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    restart: always
+    network_mode: "host"
+  isw_v2_log_cmd_saver:
+    image: log_saver_by_telegraf:latest
+    container_name: isw_v2_log_cmd_saver
+    build:
+      context: .
+      dockerfile: telegraf/Dockerfile
+    environment:
+      - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
+      - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
+      - DOCKER_INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
+      - MQTT_HOST=${MQTT_HOST}
+      - MQTT_PORT=${MQTT_PORT}
+      - INFLUXDB_URL=${INFLUXDB_URL}
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+      - /workspace/isw_v2/backend/log_savers/log_cmd_saver/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    restart: always
+    network_mode: "host"
+  isw_v2_log_attr_down_saver:
+    image: log_saver_by_telegraf:latest
+    container_name: isw_v2_log_attr_down_saver
+    build:
+      context: .
+      dockerfile: telegraf/Dockerfile
+    environment:
+      - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
+      - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
+      - DOCKER_INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
+      - MQTT_HOST=${MQTT_HOST}
+      - MQTT_PORT=${MQTT_PORT}
+      - INFLUXDB_URL=${INFLUXDB_URL}
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+      - /workspace/isw_v2/backend/log_savers/log_attr_down_saver/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    restart: unless-stopped
+    network_mode: "host"
+  isw_v2_log_online_saver:
+    image: log_saver_by_telegraf:latest
+    container_name: isw_v2_log_online_saver
+    build:
+      context: .
+      dockerfile: telegraf/Dockerfile
+    environment:
+      - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
+      - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
+      - DOCKER_INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
+      - MQTT_HOST=${MQTT_HOST}
+      - MQTT_PORT=${MQTT_PORT}
+      - INFLUXDB_URL=${INFLUXDB_URL}
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+      - /workspace/isw_v2/backend/log_savers/log_online_saver/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    restart: unless-stopped
+    network_mode: "host"
+  isw_v2_log_run_task_saver:
+    image: log_saver_by_telegraf:latest
+    container_name: isw_v2_log_run_task_saver
+    build:
+      context: .
+      dockerfile: telegraf/Dockerfile
+    environment:
+      - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
+      - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
+      - DOCKER_INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
+      - MQTT_HOST=${MQTT_HOST}
+      - MQTT_PORT=${MQTT_PORT}
+      - INFLUXDB_URL=${INFLUXDB_URL}
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+      - /workspace/isw_v2/backend/log_savers/log_run_task_saver/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    restart: always
+    network_mode: "host"
+  isw_v2_log_scene_run_saver:
+    image: log_saver_by_telegraf:latest
+    container_name: isw_v2_log_scene_run_saver
+    build:
+      context: .
+      dockerfile: telegraf/Dockerfile
+    environment:
+      - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
+      - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
+      - DOCKER_INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
+      - MQTT_HOST=${MQTT_HOST}
+      - MQTT_PORT=${MQTT_PORT}
+      - INFLUXDB_URL=${INFLUXDB_URL}
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+      - /workspace/isw_v2/backend/log_savers/log_scene_run_saver/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    restart: always
+    network_mode: "host"
+  isw_v2_scene_engine:
+    image: isw:latest
+    container_name: isw_v2_scene_engine
+    build:
+      context: /workspace/isw_v2
+      dockerfile: deploy/Dockerfile
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /workspace/isw_v2/backend/scene_engine
+        if [ -f main.py ]; then python main.py; else python main.pyc; fi
+    depends_on:
+    #  - isw_v2_redis
+      - isw_v2_celery
+    restart: always
+    network_mode: "host"
+  isw_v2_alarm_engine:
+    image: isw:latest
+    container_name: isw_v2_alarm_engine
+    build:
+      context: /workspace/isw_v2
+      dockerfile: deploy/Dockerfile
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /workspace/isw_v2/backend/alarm_engine
+        if [ -f main.py ]; then python main.py; else python main.pyc; fi
+    depends_on:
+    #  - isw_v2_redis
+      - isw_v2_celery
+    restart: always
+    network_mode: "host"
+  isw_v2_notifier:
+    image: isw:latest
+    container_name: isw_v2_notifier
+    build:
+      context: /workspace/isw_v2
+      dockerfile: deploy/Dockerfile
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /workspace/isw_v2/backend/notifier
+        if [ -f main.py ]; then python main.py; else python main.pyc; fi
+    restart: always
+    network_mode: "host"
+  isw_v2_task_engine:
+    image: isw:latest
+    container_name: isw_v2_task_engine
+    build:
+      context: /workspace/isw_v2
+      dockerfile: deploy/Dockerfile
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /workspace/isw_v2/backend
+        echo "等待数据库迁移完成..."
+        for i in $$(seq 1 180); do
+          MANAGE_FILE=$$(if [ -f manage.py ]; then echo 'manage.py'; else echo 'manage.pyc'; fi);
+          CONF_SETTINGS_FILE='config.settings.base';
+          if python $$MANAGE_FILE migrate --check --settings $$CONF_SETTINGS_FILE 2>/dev/null; then
+            echo "数据库迁移已完成"
+            break
+          fi
+          if [ $$i -eq 180 ]; then
+            echo "警告: 数据库迁移在 180 秒内未完成，继续启动 task_engine..."
+          fi
+          sleep 1
+        done
+        cd /workspace/isw_v2/backend/task_engine
+        if [ -f main.py ]; then python main.py; else python main.pyc; fi
+    depends_on:
+    #  - isw_v2_redis
+      - isw_v2_celery
+      - isw_v2_web_server
+    restart: always
+    network_mode: "host"
+  isw_v2_mqtt_sender:
+    image: isw:latest
+    container_name: isw_v2_mqtt_sender
+    build:
+      context: /workspace/isw_v2
+      dockerfile: deploy/Dockerfile
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /workspace/isw_v2/backend/mqtt_sender
+        if [ -f main.py ]; then python main.py; else python main.pyc; fi
+    restart: always
+    #depends_on:
+    #  - isw_v2_redis
+    network_mode: "host"
+  isw_v2_topic_transfer:
+    image: isw:latest
+    container_name: isw_v2_topic_transfer
+    build:
+      context: /workspace/isw_v2
+      dockerfile: deploy/Dockerfile
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /workspace/isw_v2/backend/topic_transfer
+        if [ -f main.py ]; then python main.py; else python main.pyc; fi
+    restart: always
+    network_mode: "host"
+  isw_v2_emqx_task_engine:
+    image: isw:latest
+    container_name: isw_v2_emqx_task_engine
+    build:
+      context: /workspace/isw_v2
+      dockerfile: deploy/Dockerfile
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /workspace/isw_v2/backend/emqx_task_engine
+        if [ -f main.py ]; then python main.py; else python main.pyc; fi
+    restart: always
+    network_mode: "host"

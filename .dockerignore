@@ -1,0 +1,42 @@
+# EMQX 持久化数据目录（避免构建时打包失败）
+mqtt_broker/emqx/persist/
+
+# InfluxDB 数据目录
+tsdb/influxdb/data/
+tsdb/influxdb/config/
+
+# Redis 数据目录
+redis_data/
+deploy/redis_data/
+
+# 日志目录
+backend/log/
+*.log
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# 其他临时文件
+*.tmp
+*.bak
+*.swp
+

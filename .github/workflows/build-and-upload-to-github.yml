@@ -1,0 +1,198 @@
+name: build-and-upload-to-github
+
+on:
+  # 仅手动触发，不会自动运行
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag (例如: v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+      release_name:
+        description: 'Release 名称'
+        required: false
+        default: ''
+
+permissions:
+  contents: write  # 需要创建 Release 和 tag 的权限
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout isw_v2 源码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整 git 历史，用于创建 tag
+
+      - name: 安装 Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装编译依赖 (Cython, setuptools)
+        run: |
+          python -m pip install --upgrade pip
+          # 优先使用官方 PyPI，避免国内镜像上 Cython 版本不全导致安装失败
+          pip install --no-cache-dir "cython==3.0.11" setuptools || \
+          pip install --no-cache-dir cython setuptools
+
+      - name: 获取 isw-helper 编译工具
+        run: |
+          set -e
+          echo "克隆 isw-helper 仓库..."
+          rm -rf /tmp/isw-helper
+          git clone --depth 1 https://gitee.com/hotanzn/isw-helper.git /tmp/isw-helper
+
+          if [ ! -f "/tmp/isw-helper/build_cython.py" ]; then
+            echo "错误: /tmp/isw-helper 中未找到 build_cython.py"
+            exit 1
+          fi
+
+      - name: 编译 isw_v2 源码为 .so
+        run: |
+          set -e
+          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+          # 使用独立的临时输出目录，避免与源码树产生上下级关系
+          DIST_DIR="/tmp/isw_v2-dist"
+          rm -rf "$DIST_DIR"
+          mkdir -p "$DIST_DIR"
+
+          cd /tmp/isw-helper
+
+          python build_cython.py \
+            --source "$GITHUB_WORKSPACE" \
+            --target "$DIST_DIR" \
+            --platform linux \
+            --exclude "test" \
+            --exclude "tests" \
+            --exclude "__pycache__" \
+            --exclude ".git"
+
+          echo "编译完成，输出目录: $DIST_DIR"
+
+      - name: 清理多余的 .py 源码文件
+        run: |
+          set -e
+          DIST_DIR="/tmp/isw_v2-dist"
+          echo "开始清理多余的 .py 文件，目录: $DIST_DIR"
+
+          # 删除那些已经有对应 .so 的 .py，只保留少量必要入口文件
+          find "$DIST_DIR" -name "*.py" | while read -r py; do
+            base="$(basename "$py")"
+
+            # 注意：deploy 目录下的文件已在编译阶段统一保留为源码（build_cython_delta.py::_should_keep）
+            # 不会被编译，因此不会有对应的 .so，清理阶段也不会删除它们，无需在此保护
+
+            stem="${py%.py}"
+            # 同目录下存在同名的 cpython-*.so 或 .so，则认为 .py 可以删除
+            if compgen -G "${stem}.cpython-"*".so" > /dev/null || [ -f "${stem}.so" ]; then
+              echo "删除多余源码: $py"
+              rm -f "$py"
+            fi
+          done
+
+          echo "清理完成"
+
+      - name: 删除所有 Markdown 文档（.md）
+        run: |
+          set -e
+          DIST_DIR="/tmp/isw_v2-dist"
+          echo "删除公开仓库中的所有 .md 文档，目录: $DIST_DIR"
+          find "$DIST_DIR" -name "*.md" -type f -print -delete || true
+
+      - name: 打包编译产物
+        run: |
+          set -e
+          DIST_DIR="/tmp/isw_v2-dist"
+          ARCHIVE_NAME="isw_v2-dist-linux-$(date +'%Y%m%d-%H%M%S').tar.gz"
+          ARCHIVE_PATH="/tmp/$ARCHIVE_NAME"
+          
+          echo "打包编译产物..."
+          cd "$DIST_DIR"
+          tar -czf "$ARCHIVE_PATH" .
+          
+          echo "打包完成: $ARCHIVE_PATH"
+          ls -lh "$ARCHIVE_PATH"
+          
+          # 保存归档路径供后续步骤使用
+          echo "ARCHIVE_PATH=$ARCHIVE_PATH" >> $GITHUB_ENV
+          echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV
+
+      - name: 创建 GitHub Release 并上传编译产物
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          
+          TAG_NAME="${{ github.event.inputs.tag_name }}"
+          RELEASE_NAME="${{ github.event.inputs.release_name }}"
+          
+          if [ -z "$RELEASE_NAME" ]; then
+            RELEASE_NAME="isw_v2 编译产物 - $(date +'%Y-%m-%d %H:%M:%S')"
+          fi
+          
+          echo "创建 Release: $TAG_NAME"
+          echo "Release 名称: $RELEASE_NAME"
+          echo "归档文件: $ARCHIVE_PATH"
+          
+          # 检查 tag 是否已存在（本地和远程）
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "警告: Tag $TAG_NAME 已存在，将删除旧 tag"
+            git tag -d "$TAG_NAME" 2>/dev/null || true
+            git push origin ":refs/tags/$TAG_NAME" 2>/dev/null || true
+          fi
+          
+          # 检查远程 tag 是否存在
+          if git ls-remote --tags origin "$TAG_NAME" | grep -q "$TAG_NAME"; then
+            echo "警告: 远程 Tag $TAG_NAME 已存在，将删除"
+            git push origin ":refs/tags/$TAG_NAME" 2>/dev/null || true
+          fi
+          
+          # 创建 tag（指向当前提交）
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag -a "$TAG_NAME" -m "$RELEASE_NAME"
+          git push origin "$TAG_NAME"
+          
+          # 等待 GitHub API 识别新 tag（短暂延迟）
+          echo "等待 GitHub API 识别新 tag..."
+          sleep 5
+          
+          # 检查 Release 是否已存在，如果存在则删除
+          if gh release view "$TAG_NAME" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "警告: Release $TAG_NAME 已存在，将删除旧 Release"
+            gh release delete "$TAG_NAME" --yes --repo "${{ github.repository }}" || true
+            sleep 2
+          fi
+          
+          # 创建 Release 并上传文件
+          NOTES="自动构建的 isw_v2 编译产物
+
+            构建时间: $(date +'%Y-%m-%d %H:%M:%S')
+            构建分支: ${{ github.ref }}
+            构建提交: ${{ github.sha }}
+            
+            **使用说明:**
+            1. 下载并解压归档文件
+            2. 替换部署目录中的对应文件
+            3. 重启服务"
+          
+          gh release create "$TAG_NAME" \
+            --title "$RELEASE_NAME" \
+            --notes "$NOTES" \
+            "$ARCHIVE_PATH" \
+            --repo "${{ github.repository }}"
+          
+          echo "Release 创建完成: https://github.com/${{ github.repository }}/releases/tag/$TAG_NAME"
+
+      - name: 输出下载链接
+        run: |
+          TAG_NAME="${{ github.event.inputs.tag_name }}"
+          echo "=========================================="
+          echo "编译产物已上传到 GitHub Release"
+          echo "=========================================="
+          echo "Release 链接: https://github.com/${{ github.repository }}/releases/tag/$TAG_NAME"
+          echo "归档文件: $ARCHIVE_NAME"
+          echo "=========================================="

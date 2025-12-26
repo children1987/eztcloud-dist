@@ -1,0 +1,13 @@
+"""
+日志级别：
+{
+    0: 'NOTSET',
+    50: 'CRITICAL',
+    40: 'ERROR',
+    30: 'WARNING',
+    20: 'INFO',
+    10: 'DEBUG',
+}
+"""
+一键设置日志级别脚本使用方法(10代表设置为debug级别, 可自行更改)
+docker exec -ti isw_v2_web_server bash -c "cd /workspace/isw_v2/backend/ && python -m m_common.change_log_level 10"

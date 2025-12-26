@@ -1,0 +1,76 @@
+$mainColor: #0B8DFF; // 主色
+$backgroundColor: #ffffff; // 主背景色
+$pageBackground: #fafafa; // 页面底色
+
+// 辅助色
+$temperature: #5984fd; // 温度
+$humidity: #fda261; // 湿度
+$brightness: #50c3ff; // 亮度
+$carbonDioxide: #5bcaa9; // 二氧化碳
+$shadow: #e6e6e6; // 阴影
+
+$actionIconToActivate: rgb(34, 190, 73); // 操作类icon激活
+
+// 字体
+$headlines: #1a1a1a; // 大标题
+$mainTitle: #3d3d3d; // 主要标题
+$secondaryCharacters: #616161; // 次要文字
+$contentWords: #8f8f8f; // 内容文字
+$textInput: #ccc; // 输入框文字
+$captions: #a6a6a6; // 说明文字
+// size
+$headlinesSize: 56rpx; // 大标题
+$mainTitleSize: 40rpx; // 主要标题
+$secondaryCharactersSize: 32rpx; // 次要文字
+$contentWordsSize: 28rpx;; // 内容文字
+$textInputSize: 28rpx;; // 输入框文字
+$captionsSize: 24rpx; // 说明文字
+
+// 线条
+$dividingLine: #e5e5e5; // 分隔线
+$suspensionLine: #808080; // 悬浮线
+
+// 功能
+$normalColor: #0b8dff; // 正常
+$alarmColor: #fe3d32; // 告警
+
+// 横向flex
+@mixin flex-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+}
+// 竖向flex
+@mixin flex-column {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+// 分割线
+@mixin divider{
+  height: 1rpx;
+  width: 100%;
+  background-color: $dividingLine;
+}
+// 文本溢出
+@mixin overflow-text{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// 大按钮
+@mixin button{
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(90deg, #46ACFC 0%, #5984FE 100%);
+  border-radius: 4rpx;
+  box-shadow: 0px 1px 2px 1px #DFDFDF;
+  padding: 20rpx;
+  font-size: 32rpx;
+}
+
+.icons {
+  color: #46ACFC !important;
+}

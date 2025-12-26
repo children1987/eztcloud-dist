@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth 回调处理中...</title>
+</head>
+<body>
+    <script>
+        (function() {
+            // 检查当前登录状态
+            const jwtAccess = sessionStorage.getItem('jwt_access');
+            const jwtRefresh = sessionStorage.getItem('jwt_refresh');
+            
+            // 如果已经登录，直接跳转到主页面
+            if (jwtAccess || jwtRefresh) {
+                console.log('User already logged in, redirecting to main page');
+                window.location.href = window.location.origin + '#/myproject';
+                return;
+            }
+
+            // 从 URL query 参数中提取 code 和 state
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            const error = urlParams.get('error');
+            const errorDescription = urlParams.get('error_description');
+
+            // 如果没有 OAuth 参数，直接跳转到登录页
+            if (!code && !state && !error) {
+                console.log('No OAuth parameters, redirecting to login page');
+                window.location.href = window.location.origin + '#/login';
+                return;
+            }
+
+            // 构建跳转 URL，将参数传递到 hash 路由
+            // 在 hash 模式下，query 参数应该放在 hash 后面
+            const baseUrl = window.location.origin;
+            const hashPath = '#/login';
+            
+            // 构建 query 参数
+            const queryParams = new URLSearchParams();
+            if (code) queryParams.set('code', code);
+            if (state) queryParams.set('state', state);
+            if (error) queryParams.set('error', error);
+            if (errorDescription) queryParams.set('error_description', errorDescription);
+
+            // 跳转到登录页（hash 路由），携带 query 参数
+            // 格式：http://example.com/#/login?code=xxx&state=yyy
+            const queryString = queryParams.toString();
+            const redirectUrl = baseUrl + hashPath + (queryString ? '?' + queryString : '');
+            
+            console.log('OAuth callback redirecting to:', redirectUrl);
+            window.location.href = redirectUrl;
+        })();
+    </script>
+    <p>正在处理 OAuth 回调，请稍候...</p>
+</body>
+</html>
+

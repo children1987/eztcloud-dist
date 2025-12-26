@@ -1,0 +1,11 @@
+/workspace/isw_v2/backend/log/uvicorn.log {
+  daily
+  rotate 7
+  missingok
+  notifempty
+  compress
+  delaycompress
+  dateext
+  dateformat -%Y-%m-%d
+  copytruncate
+}

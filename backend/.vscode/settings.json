@@ -1,0 +1,42 @@
+{
+    "python.defaultInterpreterPath": "d:\\env\\backend-FjLNj3e7\\Scripts\\python.exe",
+    "python.analysis.extraPaths": [
+        ".",
+        "./apps"
+    ],
+    "cursorpyright.analysis.extraPaths": [
+        ".",
+        "./apps"
+    ],
+    "python.languageServer": "None",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.autoSearchPaths": true,
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.stubPath": "./typings",
+    "python.analysis.include": [
+        "**/*.py"
+    ],
+    "python.analysis.exclude": [
+        "**/node_modules",
+        "**/__pycache__",
+        "**/migrations",
+        "**/staticfiles",
+        "**/static"
+    ],
+    "cursorpyright.analysis.autoImportCompletions": true,
+    "cursorpyright.analysis.autoSearchPaths": true,
+    "cursorpyright.analysis.diagnosticMode": "workspace",
+    "cursorpyright.analysis.exclude": [
+        "**/node_modules",
+        "**/__pycache__",
+        "**/migrations",
+        "**/staticfiles",
+        "**/static"
+    ],
+    "cursorpyright.analysis.include": [
+        "**/*.py"
+    ],
+    "cursorpyright.analysis.stubPath": "./typings",
+    "cursorpyright.analysis.typeCheckingMode": "basic"
+}

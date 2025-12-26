@@ -1,0 +1,6 @@
+-i https://pypi.doubanio.com/simple/
+django-environ==0.4.5
+influxdb-client==1.40.0; python_version >= '3.7'
+pytz==2024.2
+taos-ws-py==0.3.8
+taospy==2.7.21; python_version < '3.12' and python_full_version >= '3.6.2'
