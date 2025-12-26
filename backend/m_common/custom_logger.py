@@ -137,6 +137,15 @@ class WatchLogLevel(object):
         :param log_level_path:
         :return:
         """
+        # 确保要监控的目录存在，如果不存在则创建
+        if not os.path.exists(log_level_path):
+            try:
+                os.makedirs(log_level_path, exist_ok=True)
+            except OSError as e:
+                # 如果创建目录失败，记录错误但不抛出异常，避免影响 Django 启动
+                print(f"警告: 无法创建日志级别监控目录 {log_level_path}: {e}")
+                return
+        
         # if self.pid not in self.WATCHED_PID:
         #     self.WATCHED_PID[self.pid] = 1
         #     self.event_handler.set_log_level()
@@ -147,12 +156,16 @@ class WatchLogLevel(object):
         #         self.event_handler.logger_obj.info(
         #             f'pid: {self.pid}, count: {count}'
         #         )
-        self.observer.schedule(
-            self.event_handler,
-            log_level_path,
-            recursive=True
-        )
-        self.observer.start()
+        try:
+            self.observer.schedule(
+                self.event_handler,
+                log_level_path,
+                recursive=True
+            )
+            self.observer.start()
+        except OSError as e:
+            # 如果监控启动失败（例如目录不存在或权限问题），记录错误但不抛出异常
+            print(f"警告: 无法启动日志级别监控器 {log_level_path}: {e}")
 
 
 
