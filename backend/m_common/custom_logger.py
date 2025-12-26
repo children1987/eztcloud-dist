@@ -52,7 +52,7 @@ def get_log_level(is_str=True):
     :param is_str:
     :return:
     """
-    log_level_module = importlib.import_module('backend.log_level')
+    log_level_module = importlib.import_module('backend.log_level.level_cfg')
     importlib.reload(log_level_module)
     log_level = int(log_level_module.LOG_LEVEL)
     if is_str:
