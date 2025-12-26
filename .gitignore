@@ -1,7 +1,6 @@
 *.pyc
 /backend/.env
 /backend/log/
-/backend/log_level/
 .idea/
 /node_modules/
 /backend/com_server/log
