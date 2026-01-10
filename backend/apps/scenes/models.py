@@ -60,6 +60,16 @@ class SceneConfig(BaseModel):
         help_text='是否外部系统',
         default=False
     )
+    resend_count = models.PositiveSmallIntegerField(
+        verbose_name='重发次数',
+        help_text='重发次数(0-3次)',
+        default=0,
+    )
+    interval_seconds = models.PositiveIntegerField(
+        verbose_name='重发间隔(30-300秒)',
+        help_text='重发间隔(30-300秒)',
+        default=60
+    )
     order = models.IntegerField(
         verbose_name='场景序号',
         help_text='场景序号',

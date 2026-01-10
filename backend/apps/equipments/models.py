@@ -375,10 +375,10 @@ class DeviceCategory(models.Model):
     )
     communication_waiting_time = models.IntegerField(
         verbose_name='通讯等待时间',
-        help_text="通讯等待时间",
+        help_text="通讯等待时间(500-5000)ms",
         null=True,
         blank=True,
-        default=30000
+        default=2000
     )
     timout_retry_count = models.PositiveIntegerField(
         verbose_name="超时重发次数",
@@ -1264,66 +1264,6 @@ class OperatingRecord(models.Model):
     class Meta:
         verbose_name = '设备操作记录'
         verbose_name_plural = verbose_name
-
-
-class TopicTransferCfg(models.Model):
-
-    class Meta:
-        verbose_name = 'topic映射'
-        verbose_name_plural = verbose_name
-
-    DATA_FLOW_ = (
-        ('up', '上行'),
-        ('down', '下行'),
-    )
-    DATA_FLOW_MAP = dict(DATA_FLOW_)
-    device_category = models.ForeignKey(
-        DeviceCategory,
-        related_name='topic_cfgs',
-        verbose_name='设备类型',
-        help_text='设备类型',
-        on_delete=models.CASCADE
-    )
-    data_stream = models.ForeignKey(
-        DeviceCategoryDataStream,
-        verbose_name='自定义数据流',
-        help_text='自定义数据流',
-        null=True,
-        blank=True,
-        on_delete=models.CASCADE,
-    )
-    data_flow = models.CharField(
-        verbose_name='数据流向',
-        help_text='数据流向',
-        max_length=10,
-        choices=DATA_FLOW_
-    )
-    topic = models.CharField(
-        verbose_name='映射topic',
-        help_text='映射topic',
-        max_length=200,
-        db_index=True
-    )
-    subscribe_topic = models.CharField(
-        verbose_name='订阅topic',
-        help_text='订阅topic',
-        max_length=200,
-        null=True,
-        blank=True
-    )
-    creator = models.ForeignKey(
-        User,
-        verbose_name='创建人',
-        on_delete=models.SET_NULL,
-        help_text='创建人',
-        null=True,
-        blank=True,
-    )
-    created_time = models.DateTimeField(
-        verbose_name='创建时间',
-        help_text="创建时间",
-        default=timezone.now,
-    )
 
 
 class CloudGateway(models.Model):

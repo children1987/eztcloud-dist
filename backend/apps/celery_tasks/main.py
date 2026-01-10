@@ -3,8 +3,8 @@ import django
 import sys
 import os
 from pathlib import Path
-
 from celery import Celery
+from django.db import connections
 
 # 项目根目录（backend 的上级目录）
 # 使用 Path(__file__).resolve() 确保始终得到绝对路径，兼容所有导入方式
@@ -34,6 +34,7 @@ celery_app.autodiscover_tasks([
     'backend.apps.celery_tasks.down_tasks',
     'backend.apps.celery_tasks.log_tasks',
 ])
+
 
 # 开启celery的命令
 #  celery -A 应用路径（.包路径） worker -l info

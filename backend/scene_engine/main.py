@@ -138,7 +138,8 @@ class SceneEngineServe(object):
         """
         scene_qs = SceneConfig.objects.filter(
             is_active=True,
-            is_deleted=False
+            is_deleted=False,
+            project__isnull=False,
         ).all()
         ret = SceneDataSerializer(scene_qs, many=True).data
         for scene_data in ret:

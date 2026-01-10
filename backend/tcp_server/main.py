@@ -1,11 +1,14 @@
-import binascii
 import json
 import pickle
 import threading
 import time
 import traceback
 
-import _setup_backend
+# 第一步：本地相对导入，修正 sys.path，使得可以导入 backend.*
+import _setup_backend  # noqa: F401
+
+# 第二步：在 sys.path 正确之后，初始化 Django 环境（DJANGO_SETTINGS_MODULE + django.setup）
+import backend.tcp_server._setup_django  # noqa: F401
 import backend.m_common.set_timezone
 
 import redis
@@ -13,6 +16,7 @@ from twisted.internet import reactor, protocol, endpoints
 from twisted.internet.threads import deferToThread
 
 from backend.device_shadow.device_shadow import DeviceShadow
+from backend.apps.utils.auth_code.project_license import check_project_license_status
 from backend.m_common.communication import MRP, process_payload_by_msg_data_type
 from backend.m_common.data_get_tool import GetDataTool
 from backend.m_common.mq_factory import MqFactory
@@ -66,6 +70,32 @@ class DeviceServer(protocol.Protocol):
             tcp_server_logger)
         self._up_mq = MqFactory().get_mq('up')
 
+    def _check_license_and_disconnect(self, device: str, device_info: dict):
+        """
+        检查项目授权状态，若已过期则直接断开当前TCP连接，不更新设备状态，避免产生“上线”记录。
+
+        :param device: 设备用户名
+        :param device_info: 设备信息字典（包含 category.project.id 等）
+        :return: True 表示已处理并断开连接（调用方应立即 return），False 表示授权通过，可继续后续流程
+        """
+        socket = self.transport
+        # 在连接建立前检查项目授权（必须在 add_device 和 set_online 之前）
+        project_id = device_info['category']['project']['id']
+        status = check_project_license_status(project_id)
+        if not status['is_allowed']:
+            tcp_server_logger.warning(
+                f"项目 {project_id} 授权已过期，拒绝设备 {device} 的TCP连接。"
+                f"原因：{status['reason']}"
+            )
+            # 直接断开连接，不建立连接，不更新设备状态，避免产生"上线"记录
+            self._state_machine.set_state('disconnect')
+            try:
+                socket.loseConnection()
+            except Exception as e:
+                tcp_server_logger.error(f"关闭TCP连接失败: {e}")
+            return True
+        return False
+
     def _to_connect(self, src_msg):
         """状态转为在线"""
         socket = self.transport
@@ -91,6 +121,11 @@ class DeviceServer(protocol.Protocol):
         if device_info and device_info['is_active']:
             check_password = device_info['password']
             if check_password == password:
+                # 在连接建立前检查项目授权（必须在 add_device 和 set_online 之前）
+                if self._check_license_and_disconnect(device, device_info):
+                    return
+                
+                # 授权通过，建立连接
                 tcp_server_logger.debug(f'device: {device} 连接成功！')
                 self.factory.add_device(device, socket)
                 shadow.set_online(device, True, tcp_server_mqtt_client, is_notify=True)
@@ -252,6 +287,7 @@ def send_message_to_device(device_username):
         access_protocol = device_info['category']['access_protocol']
         down_interval = device_info['category']['down_interval']
         tcp_server_logger.debug(f'下发时间间隔:{down_interval}毫秒')
+        interval_seconds = down_interval / 1000 if down_interval else 0.5
         while True:
             data = device_tcp_mq.get_msg()
             if not data:
@@ -269,10 +305,9 @@ def send_message_to_device(device_username):
                 log_msg_out(content)
                 socket.write(content)
                 tcp_server_logger.debug(f'{device_username}tcp服务下发数据{content}')
-                time.sleep(down_interval / 1000)
             else:
                 MRP.down_tcp_msg(device_info, socket, data, tcp_server_logger)
-                time.sleep(0.5)
+            time.sleep(interval_seconds)
     except Exception as e:
         tcp_server_logger.error(traceback.format_exc())
     finally:
