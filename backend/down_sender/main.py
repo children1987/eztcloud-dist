@@ -7,7 +7,6 @@
     本模块不做数据解析处理 其余模块向down MQ中写入数据时应提前处理成设备可识别的数据格式
 
 """
-import json
 import time
 import traceback
 
@@ -39,7 +38,6 @@ def parse_msg(msg: dict):
     """
     作为回调函数 解析 mqtt的消息
     """
-    # todo 异步操作
     down_sender_logger.debug(f'收到数据，开始解析。{msg}')
     msg['time'] = get_utc_timestamp()
     try:

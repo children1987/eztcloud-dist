@@ -1,9 +1,9 @@
 import os
 import sys
-import threading
 import time
 import traceback
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
 
 # 先设置 sys.path，确保可以导入 backend.*
 # 使用 Path(__file__).resolve() 确保始终得到绝对路径，兼容所有导入方式
@@ -29,6 +29,10 @@ from backend.apps.scenes.models import SceneConfig
 from backend.apps.scenes.serializers import SceneDataSerializer, SceneTimingSerializer
 # from celery_tasks.scene_ctrl.tasks import parse_scene_task
 logger = settings.SCENE_ENGINE_LOGGER
+
+# 线程池用于处理场景消息，避免为每条消息创建一个新线程导致内存溢出
+SCENE_ENGINE_MAX_WORKERS = 10
+SCENE_PARSE_EXECUTOR = ThreadPoolExecutor(max_workers=SCENE_ENGINE_MAX_WORKERS)
 
 
 class SceneReceiverServer(MQTTClient):
@@ -56,8 +60,8 @@ class SceneReceiverServer(MQTTClient):
                 'topic <<{}>> msg <<{}>> '.format(msg.topic, payload)
             )
             scene_manager = SceneManager(msg.topic, payload)
-            p = threading.Thread(target=scene_manager.parse_msg)
-            p.start()
+            # 使用线程池执行解析逻辑，避免无限制创建线程
+            SCENE_PARSE_EXECUTOR.submit(scene_manager.parse_msg)
             # parse_scene_task.delay(msg.topic, payload)  # 调起celery任务
         except Exception as e:
             logger.error(e)

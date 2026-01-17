@@ -72,7 +72,7 @@ class DeviceServer(protocol.Protocol):
 
     def _check_license_and_disconnect(self, device: str, device_info: dict):
         """
-        检查项目授权状态，若已过期则直接断开当前TCP连接，不更新设备状态，避免产生“上线”记录。
+        检查项目授权状态，若已过期则直接断开当前TCP连接，不更新设备状态，避免产生"上线"记录。
 
         :param device: 设备用户名
         :param device_info: 设备信息字典（包含 category.project.id 等）
@@ -81,18 +81,29 @@ class DeviceServer(protocol.Protocol):
         socket = self.transport
         # 在连接建立前检查项目授权（必须在 add_device 和 set_online 之前）
         project_id = device_info['category']['project']['id']
-        status = check_project_license_status(project_id)
+        # 强制不使用缓存，确保使用最新的授权码状态（授权码更新后立即生效）
+        status = check_project_license_status(project_id, use_cache=False, write_cache=False)
+        # 使用 INFO 级别，确保在非 DEBUG 模式下也能看到授权检查结果
+        tcp_server_logger.info(
+            f"设备 {device} (项目 {project_id}) 授权检查结果: is_allowed={status['is_allowed']}, "
+            f"reason={status.get('reason', 'N/A')}"
+        )
         if not status['is_allowed']:
             tcp_server_logger.warning(
                 f"项目 {project_id} 授权已过期，拒绝设备 {device} 的TCP连接。"
                 f"原因：{status['reason']}"
             )
+            # 强制刷新日志，确保授权拒绝记录立即写入文件（用于调试）
+            for handler in tcp_server_logger.handlers:
+                handler.flush()
             # 直接断开连接，不建立连接，不更新设备状态，避免产生"上线"记录
             self._state_machine.set_state('disconnect')
             try:
                 socket.loseConnection()
             except Exception as e:
                 tcp_server_logger.error(f"关闭TCP连接失败: {e}")
+                for handler in tcp_server_logger.handlers:
+                    handler.flush()
             return True
         return False
 
@@ -115,6 +126,9 @@ class DeviceServer(protocol.Protocol):
             return
 
         tcp_server_logger.info(f'reg_frame: {reg_frame}')
+        # 强制刷新日志，确保连接记录立即写入文件（用于调试）
+        for handler in tcp_server_logger.handlers:
+            handler.flush()
 
         device, password = reg_frame.split('&')
         device_info = shadow.get_info(device)
@@ -234,6 +248,15 @@ class DeviceServer(protocol.Protocol):
         """
 
         try:
+            # 记录收到的数据（用于调试连接问题）
+            if self._state_machine.state == 'disconnect':
+                # 新连接，记录注册包的前几个字节（用于调试）
+                preview = data[:50] if len(data) > 50 else data
+                try:
+                    preview_str = preview.decode('utf-8', errors='replace')
+                except Exception:
+                    preview_str = preview.hex()
+                tcp_server_logger.info(f"收到新连接注册包（状态=disconnect），预览: {preview_str}")
             self.parse_data(data)
         except Exception as _:
             tcp_server_logger.error(traceback.format_exc())
@@ -347,18 +370,40 @@ def monitor_and_disconnect():
     """
     监听设备禁用，禁用之后移除相应的socket,使之通信立刻断开
     """
-    disable_channel = r'redis/device/disable'
+    # 注意：redis-py 返回的 channel 默认为 bytes，这里统一用 str 比较
+    disable_channel = 'redis/device/disable'
+    tcp_server_logger.info(f"开始监听 Redis 通道: {disable_channel}")
     redis_pubsub_client.subscribe(disable_channel)
     for msg in redis_pubsub_client.listen():
-        if msg['type'] == 'message' and str(msg['channel']) == disable_channel:
-            data = msg['data']
-            if isinstance(data, (bytes, bytearray)):
-                data = data.decode()
-            if data in factory.devices:
-                device_socket = factory.get_socket_by_device(data)
+        if msg.get('type') != 'message':
+            continue
+
+        channel = msg.get('channel')
+        if isinstance(channel, (bytes, bytearray)):
+            channel = channel.decode()
+
+        if channel != disable_channel:
+            continue
+
+        data = msg.get('data')
+        if isinstance(data, (bytes, bytearray)):
+            data = data.decode()
+        
+        # 记录收到的踢线消息
+        tcp_server_logger.info(f"收到 Redis 踢线消息: channel={channel}, device={data}")
+
+        device_socket = factory.get_socket_by_device(data)
+        if device_socket:
+            try:
                 device_socket.loseConnection()
+                tcp_server_logger.info(f"TCP 设备 {data} 因授权过期/设备禁用被踢下线")
+            except Exception as e:
+                tcp_server_logger.error(f"关闭 TCP 设备 {data} 连接失败: {e}")
                 shadow.set_online(data, False, tcp_server_mqtt_client)
+            if data in factory.devices:
                 del factory.devices[data]
+        else:
+            tcp_server_logger.debug(f"收到踢线指令，但设备 {data} 不在当前连接的设备列表中")
 
 
 def clean_up_redis_key():

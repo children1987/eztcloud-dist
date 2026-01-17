@@ -73,7 +73,12 @@ class Tasks(models.Model):
         null=True,
         blank=True,
     )
-    is_active = models.BooleanField(verbose_name='是否启用', default=True)
+    is_active = models.BooleanField(verbose_name='是否启用', default=True, help_text='用户配置的启用/停用状态')
+    enabled = models.BooleanField(
+        verbose_name='是否因授权过期被关停',
+        default=True,
+        help_text='是否因授权过期而被关停。True=正常，False=因授权过期被关停。实际执行状态 = is_active AND enabled'
+    )
     conf_for_type = models.JSONField(
         verbose_name='基于任务类型的相关配置',
         help_text='类型为自定义数据下发需要pubish_type推送方式和data_stream自定义数据流',

@@ -107,9 +107,22 @@ def run(msg: dict):
         up_worker_mqtt_client = MQTTPublishClientFactory.get_mqtt_client(params_obj)
         device_shadow = DeviceShadow(up_worker_logger)
         msg_type = msg['type']
-        username = msg['username']
+        username = msg.get('username') or msg.get('device_username')
+        # 修复：payload 可能是 bytes 类型，需要先检查类型再调用 .keys()
+        payload = msg.get("payload", {})
+        if isinstance(payload, dict):
+            payload_keys = list(payload.keys())
+        else:
+            payload_keys = "N/A (bytes)"
+        up_worker_logger.debug(
+            f'[up_worker] 开始处理 attributes 消息: username={username}, '
+            f'device_username={msg.get("device_username")}, payload_keys={payload_keys}'
+        )
         # 如果设备被禁用，此设备所有上报为无效
         device_info = device_shadow.get_info(username)
+        if not device_info:
+            up_worker_logger.error(f'[up_worker] 设备信息未找到: username={username}, msg_type={msg_type}, msg={msg}')
+            return
         if not device_info['is_active']:
             device_shadow.set_online(username, False)
             up_worker_logger.debug(f'设备已禁用：{username}')
@@ -142,12 +155,26 @@ def run(msg: dict):
             updated_msg['data_type_text'] = 'JSON'
             updated_msg = DataTypeCheck.check_msg(updated_msg)
         # 记录设备上报日志
-        save_msg_log(updated_msg, msg_type)
         if not updated_msg.get('is_valid'):
+            if 'err_msg' in updated_msg:
+                err_msg = updated_msg.pop('err_msg')
+            else:
+                data_type_text = updated_msg.get('data_type_text', '')
+                err_msg = f'{data_type_text} 数据格式错误！'
+            extra = {
+                'err_data': {
+                    'errcode': 400,
+                    'err_msg': err_msg
+                }
+            }
+            save_msg_log(updated_msg, msg_type, extra)
             up_worker_logger.info(f'【up_worker】 设备：{username}上报数据格式校验失败 msg:{msg}')
             return
+        save_msg_log(updated_msg, msg_type)
         # 2. 根据不同的消息类型做出相应操作
+        up_worker_logger.debug(f'[up_worker] 准备执行 attributes handler: username={username}')
         MSG_HANDLER[msg_type](up_worker_mqtt_client).exec(updated_msg)
+        up_worker_logger.debug(f'[up_worker] attributes handler 执行完成: username={username}')
         if msg_type == 'attributes' and online_cfg and msg:
             is_online = get_device_is_online(online_cfg, msg)
             if is_online is None:

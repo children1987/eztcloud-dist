@@ -89,7 +89,7 @@ class AbstractProcess(models.Model):
         record.result = result
         record.remark = remark
         record.content_object = self
-        record.approve_time = datetime.datetime.now()
+        record.approve_time = timezone.now()
         record.save()
 
         # 1.1. 如果为拒绝，则直接删除当前审批人列表，更新审批状态，直接结束
@@ -117,7 +117,7 @@ class AbstractProcess(models.Model):
             if next_node['nodeType'] == 'end':  # 流程结束
                 self.state = 'pass'
                 self.cur_node_id = -1
-                self.pass_time = datetime.datetime.now()
+                self.pass_time = timezone.now()
 
                 # 流程结束后，调用回调函数
                 if callable(callback):
