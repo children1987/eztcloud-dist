@@ -1016,6 +1016,7 @@ class Device(BaseModel):
         max_length=64,
         verbose_name='设备序列号',
         help_text='在同一个设备类型下唯一',
+        db_index=True,
         null=True,
         blank=True,
     )

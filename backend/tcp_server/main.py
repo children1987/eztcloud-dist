@@ -21,7 +21,7 @@ from backend.m_common.communication import MRP, process_payload_by_msg_data_type
 from backend.m_common.data_get_tool import GetDataTool
 from backend.m_common.mq_factory import MqFactory
 from backend.m_common.mqtt_pub_client_factory import MQTTPublishClientFactory, PublishClientNames, InternalPublishClientParams
-from backend.m_common.redis_pool import rule_pool, unexpired_device_pool, down_mq_pool
+from backend.m_common.redis_pool import rule_pool, unexpired_device_pool, down_mq_pool, tcp_pool
 from backend.m_common.time_util import get_utc_timestamp
 from backend.m_common.tools import is_generator_empty
 from backend.rule_engine.rule_engine_interface import RuleEngineInterface
@@ -69,6 +69,7 @@ class DeviceServer(protocol.Protocol):
             redis.Redis(connection_pool=rule_pool),
             tcp_server_logger)
         self._up_mq = MqFactory().get_mq('up')
+        self._tcp_redis_db= redis.Redis(connection_pool=tcp_pool)
 
     def _check_license_and_disconnect(self, device: str, device_info: dict):
         """
@@ -82,7 +83,7 @@ class DeviceServer(protocol.Protocol):
         # 在连接建立前检查项目授权（必须在 add_device 和 set_online 之前）
         project_id = device_info['category']['project']['id']
         # 强制不使用缓存，确保使用最新的授权码状态（授权码更新后立即生效）
-        status = check_project_license_status(project_id, use_cache=False, write_cache=False)
+        status = check_project_license_status(project_id, use_cache=True, write_cache=False)
         # 使用 INFO 级别，确保在非 DEBUG 模式下也能看到授权检查结果
         tcp_server_logger.info(
             f"设备 {device} (项目 {project_id}) 授权检查结果: is_allowed={status['is_allowed']}, "
@@ -110,20 +111,19 @@ class DeviceServer(protocol.Protocol):
     def _to_connect(self, src_msg):
         """状态转为在线"""
         socket = self.transport
-        reg_frame = src_msg
-
-        # 注册包适配
-        fixed_reg_frame = get_reg_frame(src_msg, socket)
-        if fixed_reg_frame:
-            reg_frame = fixed_reg_frame
-
-        reg_frame = reg_frame.decode('utf-8')
-
-        # 注册报文不含&，则直接返回
-        if '&' not in reg_frame:
-            tcp_server_logger.warning(f'注册包 reg_frame={reg_frame}')
-            self._state_machine.set_state('disconnect')
-            return
+        fixed_reg_frame = None
+        try:
+            # 检查注册帧是否否和系统规范
+            reg_frame = src_msg.decode('utf-8')
+            assert reg_frame.startswith('DU_') and reg_frame[13] == '&'
+        except Exception as _:
+            # 自定义注册帧
+            reg_frame = get_reg_frame(src_msg, socket, self._tcp_redis_db)
+            # 注册报文不含&，则直接返回
+            if not reg_frame:
+                tcp_server_logger.warning(f'注册包 src_msg={src_msg}')
+                self._state_machine.set_state('disconnect')
+                return
 
         tcp_server_logger.info(f'reg_frame: {reg_frame}')
         # 强制刷新日志，确保连接记录立即写入文件（用于调试）
