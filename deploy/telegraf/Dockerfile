@@ -18,14 +18,11 @@ RUN rm -rf /etc/apt/sources.list.d && mkdir -p /etc/apt/sources.list.d && \
       wget \
       curl \
       gnupg && \
-    mkdir -p /usr/share/keyrings && \
-    (wget -q https://repos.influxdata.com/influxdata-archive_compat.key -O /tmp/influxdata-archive_compat.key || \
-     curl -fsSL https://repos.influxdata.com/influxdata-archive_compat.key -o /tmp/influxdata-archive_compat.key) && \
-    gpg --dearmor /tmp/influxdata-archive_compat.key > /usr/share/keyrings/influxdata-archive_compat.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/influxdata-archive_compat.gpg] https://repos.influxdata.com/debian stable main" > /etc/apt/sources.list.d/influxdata.list && \
-    apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=30 && \
-    apt-get install -y --no-install-recommends telegraf=1.26.1-1 && \
-    rm -rf /var/lib/apt/lists/* /tmp/influxdata-archive_compat.key
+    TELEGRAF_VER=1.26.1-1 && \
+    ARCH=amd64 && \
+    wget -q "https://dl.influxdata.com/telegraf/releases/telegraf_${TELEGRAF_VER}_${ARCH}.deb" -O /tmp/telegraf.deb && \
+    dpkg -i /tmp/telegraf.deb || apt-get install -yf && \
+    rm -rf /var/lib/apt/lists/* /tmp/telegraf.deb
 
 COPY telegraf/requirements.txt /workspace/isw_v2/deploy/telegraf/
 
