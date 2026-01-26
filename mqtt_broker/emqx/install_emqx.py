@@ -75,7 +75,7 @@ def write_credentials(
             print("⚠️ 现有凭证文件无法解析，将被覆盖。")
             payload = {}
 
-    # 记录直连 EMQX Dashboard/HTTP API 的端口（默认 18084，避免依赖 Nginx 反代的 58084）
+    # 记录直连 EMQX Dashboard/HTTP API 的端口（默认 18084，避免依赖 Nginx 58084 反代）
     dashboard_url = f"http://{ip}:{dashboard_port}"
 
     # 如果容器已存在且不更新密码，则保留现有密码（使用凭证文件中的密码）
