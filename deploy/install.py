@@ -24,7 +24,15 @@ import textwrap
 import time
 import tempfile
 import zipfile
-import requests
+try:
+    import requests
+except ImportError:
+    print("检测到缺少 requests，正在自动安装...")
+    subprocess.run(
+        [sys.executable, "-m", "pip", "install", "--no-cache-dir", "requests"],
+        check=False,
+    )
+    import requests
 from pathlib import Path
 
 
