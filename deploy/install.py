@@ -13,8 +13,6 @@ EZtCloud (isw_v2) 自动化安装脚本。
 deploy_all.py 亦会复用该文件，因此本脚本统一对其进行读写。
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import os
@@ -28,7 +26,6 @@ import tempfile
 import zipfile
 import requests
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -60,7 +57,7 @@ DEFAULT_BROKER_TLS_PORT = "7885"
 DEFAULT_TCP_PORT = "6879"
 
 # username -> (env_username_key, env_password_key) 列表
-MQTT_ENV_MAPPING: Dict[str, List[Tuple[str, str]]] = {
+MQTT_ENV_MAPPING = {
     "SU_down_sender": [("DOWN_SENDER_MQTT_USERNAME", "DOWN_SENDER_MQTT_PASSWORD")],
     "SU_up_worker": [("UP_WORKER_MQTT_USERNAME", "UP_WORKER_MQTT_PASSWORD")],
     "SU_notifier": [("NOTIFIER_MQTT_USERNAME", "NOTIFIER_MQTT_PASSWORD")],
@@ -78,7 +75,7 @@ MQTT_ENV_MAPPING: Dict[str, List[Tuple[str, str]]] = {
 }
 
 # username -> client_id 环境变量名（值固定等于 username）
-MQTT_CLIENT_ID_ENV: Dict[str, str] = {
+MQTT_CLIENT_ID_ENV = {
     "SU_alarm_engine": "ALARM_MQTT_CLIENT_ID",
     "SU_down_sender": "DOWN_SENDER_MQTT_CLIENT_ID",
     "SU_mqtt_receiver": "RECEIVER_MQTT_CLIENT_ID",
@@ -92,7 +89,7 @@ MQTT_CLIENT_ID_ENV: Dict[str, str] = {
 }
 
 # 系统用户配置：用户名 -> (环境变量用户名键, 环境变量密码键)
-SYSTEM_USERS_CONFIG: List[Tuple[str, str, str]] = [
+SYSTEM_USERS_CONFIG = [
     ("SU_device_shadow", "DEVICE_SHADOW_API_USER", "DEVICE_SHADOW_API_TOKEN"),
     ("SU_alarm_engine", "ALARM_ENGINE_API_USER", "ALARM_ENGINE_API_TOKEN"),
     ("SU_rule_engine", "RULE_ENGINE_API_USER", "RULE_ENGINE_API_TOKEN"),
@@ -105,7 +102,7 @@ class InstallError(RuntimeError):
     """用户友好的异常提示。"""
 
 
-def generate_password(length: int = 32) -> str:
+def generate_password(length=32):
     charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
     first = secrets.choice("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_")
     rest = "".join(secrets.choice(charset) for _ in range(length - 1))
@@ -113,12 +110,12 @@ def generate_password(length: int = 32) -> str:
 
 
 class IswInstaller:
-    def __init__(self, args: argparse.Namespace):
+    def __init__(self, args):
         self.args = args
-        self.credentials: Dict[str, Any] = self._load_credentials()
+        self.credentials = self._load_credentials()
 
     # ------------------------------------------------------------------ utils
-    def _load_credentials(self) -> Dict[str, Any]:
+    def _load_credentials(self):
         if CREDENTIALS_FILE.exists():
             try:
                 with CREDENTIALS_FILE.open("r", encoding="utf-8") as fp:
@@ -129,25 +126,25 @@ class IswInstaller:
                 print(f"⚠️ 读取 {CREDENTIALS_FILE} 失败，将重新生成: {exc}")
         return {}
 
-    def _save_credentials(self) -> None:
+    def _save_credentials(self):
         CREDENTIALS_FILE.parent.mkdir(parents=True, exist_ok=True)
         with CREDENTIALS_FILE.open("w", encoding="utf-8") as fp:
             json.dump(self.credentials, fp, indent=2, ensure_ascii=False)
         os.chmod(CREDENTIALS_FILE, 0o600)
 
-    def _reload_credentials(self) -> None:
+    def _reload_credentials(self):
         self.credentials = self._load_credentials()
 
     def _run(
         self,
-        cmd: Sequence[str],
+        cmd,
         *,
-        cwd: Optional[Path] = None,
-        env: Optional[Dict[str, str]] = None,
-        check: bool = True,
-        capture: bool = False,
-        timeout: Optional[int] = None,
-    ) -> subprocess.CompletedProcess | str:
+        cwd=None,
+        env=None,
+        check=True,
+        capture=False,
+        timeout=None,
+    ):
         display = " ".join(cmd)
         print(f"→ 执行命令: {display}")
         full_env = os.environ.copy()
@@ -157,16 +154,17 @@ class IswInstaller:
             cmd,
             cwd=str(cwd) if cwd else None,
             env=full_env,
-            text=True,
-            capture_output=capture,
+            universal_newlines=True,
+            stdout=subprocess.PIPE if capture else None,
+            stderr=subprocess.PIPE if capture else None,
             check=check,
             timeout=timeout,
         )
         if capture:
-            return (result.stdout or "").strip()
+            return (getattr(result, "stdout", "") or "").strip()
         return result
 
-    def _ensure_backend_env(self) -> None:
+    def _ensure_backend_env(self):
         """确保 backend/.env 存在。
 
         优先使用 .env.example 作为模板；若两者都不存在，则创建一个空的 .env，
@@ -182,10 +180,10 @@ class IswInstaller:
             BACKEND_ENV.write_text("# 自动创建的占位 .env，将在安装过程中补全关键配置。\n", encoding="utf-8")
             print(f"✓ 未找到 {BACKEND_ENV_EXAMPLE}，已创建空的 {BACKEND_ENV}")
 
-    def _load_env_map(self) -> Dict[str, str]:
+    def _load_env_map(self):
         if not BACKEND_ENV.exists():
             return {}
-        data: Dict[str, str] = {}
+        data = {}
         with BACKEND_ENV.open("r", encoding="utf-8") as fp:
             for line in fp:
                 line = line.strip()
@@ -195,15 +193,15 @@ class IswInstaller:
                 data[key.strip()] = value.strip()
         return data
 
-    def _update_env_file(self, updates: Dict[str, Optional[str]]) -> None:
+    def _update_env_file(self, updates):
         if not updates:
             return
         self._ensure_backend_env()
-        existing_lines: List[str] = []
+        existing_lines = []
         if BACKEND_ENV.exists():
             existing_lines = BACKEND_ENV.read_text(encoding="utf-8").splitlines()
-        handled: set[str] = set()
-        new_lines: List[str] = []
+        handled = set()
+        new_lines = []
         for line in existing_lines:
             stripped = line.strip()
             if not stripped or stripped.startswith("#") or "=" not in line:
@@ -223,12 +221,12 @@ class IswInstaller:
         BACKEND_ENV.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
         print(f"✓ 已更新 backend/.env 中的 {', '.join(updates.keys())}")
 
-    def _copy_env_to_deploy(self) -> None:
+    def _copy_env_to_deploy(self):
         target = DEPLOY_DIR / ".env"
         shutil.copy2(BACKEND_ENV, target)
         print(f"✓ 已同步 backend/.env → {target}")
 
-    def _copy_public_key(self) -> None:
+    def _copy_public_key(self):
         """复制 IAM 公钥到 isw_v2，需在 docker-compose build 前完成。"""
         src = WORKSPACE / "iam" / "iam" / "security" / "public.pem"
         dest = BACKEND_DIR / "security" / "public.pem"
@@ -239,7 +237,7 @@ class IswInstaller:
         shutil.copy2(src, dest)
         print(f"✓ 已复制 IAM 公钥到 {dest}")
 
-    def _wait_for_container(self, name: str, timeout: int = 180) -> bool:
+    def _wait_for_container(self, name, timeout=180):
         print(f"等待容器 {name} 启动...")
         for _ in range(timeout):
             status = self._run(
@@ -255,7 +253,7 @@ class IswInstaller:
         print(f"⚠️ 容器 {name} 在 {timeout}s 内未就绪。")
         return False
 
-    def _ensure_admin(self) -> None:
+    def _ensure_admin(self):
         """确保数据库凭证已保存，不处理 eztcloud admin（应从 IAM 同步）"""
         changed = False
         pg_section = self.credentials.setdefault("postgres", {})
@@ -270,7 +268,7 @@ class IswInstaller:
             self._save_credentials()
             print("✓ 已更新 deploy_credentials.json 中的数据库凭证。")
 
-    def _sync_user_from_iam(self, username: str, password: str) -> None:
+    def _sync_user_from_iam(self, username, password):
         """在容器内使用 Django 管理命令从 IAM 同步用户
         
         Args:
@@ -310,7 +308,7 @@ class IswInstaller:
             if hasattr(result, 'returncode') and result.returncode != 0:
                 raise InstallError(f"同步用户命令执行失败，退出码: {result.returncode}")
 
-    def _sync_admin_from_iam(self) -> None:
+    def _sync_admin_from_iam(self):
         """从 IAM 同步 admin 用户到 eztcloud"""
         # 获取 IAM admin 凭证
         iam_admin = self.credentials.get("iam_admin", {})
@@ -333,7 +331,7 @@ class IswInstaller:
         except Exception as e:
             raise InstallError(f"同步用户时发生错误: {str(e)}")
 
-    def _ensure_system_users_credentials(self) -> None:
+    def _ensure_system_users_credentials(self):
         """生成并保存系统用户密码到 deploy_credentials.json"""
         changed = False
         system_users_section = self.credentials.setdefault("system_users", {})
@@ -353,7 +351,7 @@ class IswInstaller:
             print("✓ 已更新 deploy_credentials.json 中的系统用户凭证。")
 
     # ------------------------------------------------------------------ installers
-    def _install_influxdb(self) -> None:
+    def _install_influxdb(self):
         if self.args.skip_influx:
             print("跳过 InfluxDB 安装（--skip-influx）")
             return
@@ -362,7 +360,7 @@ class IswInstaller:
         self._run(["python3", str(TSDB_INSTALLER)])
         self._reload_credentials()
 
-    def _install_emqx(self) -> None:
+    def _install_emqx(self):
         if self.args.skip_emqx:
             print("跳过 EMQX 安装（--skip-emqx）")
             return
@@ -373,14 +371,14 @@ class IswInstaller:
         self._reload_credentials()
 
     # ------------------------------------------------------------------ env sync
-    def _sync_basic_env(self) -> None:
+    def _sync_basic_env(self):
         env_map = self._load_env_map()
         pg = self.credentials.get("postgres", {})
         influx = self.credentials.get("influxdb", {})
         emqx = self.credentials.get("emqx", {})
         oauth = self.credentials.get("iam_client_eztcloud", {})
 
-        def _require_oauth_field(key: str) -> str:
+        def _require_oauth_field(key):
             value = oauth.get(key)
             if not value:
                 raise InstallError(
@@ -476,14 +474,14 @@ class IswInstaller:
         }
         self._update_env_file(updates)
 
-    def _sync_system_users_env(self) -> None:
+    def _sync_system_users_env(self):
         """从 deploy_credentials.json 读取系统用户凭证并写入 .env 文件"""
         system_users = self.credentials.get("system_users", {})
         if not system_users:
             print("⚠️ 未在凭证文件中找到 system_users，跳过系统用户环境变量写入。")
             return
         
-        updates: Dict[str, Optional[str]] = {}
+        updates = {}
         for username, user_env_key, token_env_key in SYSTEM_USERS_CONFIG:
             user_info = system_users.get(username, {})
             user_value = user_info.get("username", username)
@@ -501,7 +499,7 @@ class IswInstaller:
         else:
             print("⚠️ 未找到可写入的系统用户凭证。")
 
-    def _ensure_mqtt_internal_users(self) -> None:
+    def _ensure_mqtt_internal_users(self):
         """确保 deploy_credentials.json 中有 internal_users（如果不存在则提前生成）。"""
         emqx = self.credentials.get("emqx", {})
         users = emqx.get("internal_users")
@@ -548,14 +546,14 @@ class IswInstaller:
         self._save_credentials()
         print(f"✓ 已生成 {len(generated_users)} 个 internal_users 并保存到 deploy_credentials.json")
 
-    def _sync_mqtt_credentials(self) -> None:
+    def _sync_mqtt_credentials(self):
         emqx = self.credentials.get("emqx", {})
         users = emqx.get("internal_users")
         if not isinstance(users, list):
             print("⚠️ 未在凭证文件中找到 emqx.internal_users，跳过 MQTT 账号写入。")
             return
         user_map = {item.get("username"): item.get("password") for item in users if item.get("username")}
-        updates: Dict[str, Optional[str]] = {}
+        updates = {}
         for username, pairs in MQTT_ENV_MAPPING.items():
             password = user_map.get(username)
             if not password:
@@ -573,7 +571,7 @@ class IswInstaller:
         else:
             print("⚠️ 未找到可写入的 MQTT 用户凭证，可能 install_emqx.py 尚未生成 internal_users。")
 
-    def _sync_emqx_api_credentials(self) -> None:
+    def _sync_emqx_api_credentials(self):
         emqx = self.credentials.get("emqx", {})
         api_key = emqx.get("api_key")
         api_secret = emqx.get("api_secret")
@@ -588,7 +586,7 @@ class IswInstaller:
         )
 
     # ------------------------------------------------------------------ docker helpers
-    def _run_init_deploy(self) -> None:
+    def _run_init_deploy(self):
         if self.args.skip_docker:
             print("跳过 docker 构建/启动（--skip-docker）")
             return
@@ -604,21 +602,21 @@ class IswInstaller:
         env["COMPOSE_HTTP_TIMEOUT"] = "300"
         self._run(["bash", str(script)], cwd=DEPLOY_DIR, env=env or None)
 
-    def _docker_compose_up(self) -> None:
+    def _docker_compose_up(self):
         self._run(["docker-compose", "-p", PROJECT_NAME, "up", "-d"], cwd=DEPLOY_DIR)
 
-    def _restart_container(self, name: str) -> None:
+    def _restart_container(self, name):
         self._run(["docker", "restart", name], check=False)
 
     # ------------------------------------------------------------------ django helpers
     def _run_manage(
         self,
-        *manage_args: str,
-        check: bool = True,
-        capture: bool = False,
-        extra_env: Optional[Dict[str, str]] = None,
-    ) -> subprocess.CompletedProcess | str:
-        cmd: List[str] = ["docker", "exec"]
+        *manage_args,
+        check=True,
+        capture=False,
+        extra_env=None,
+    ):
+        cmd = ["docker", "exec"]
         if extra_env:
             for key, value in extra_env.items():
                 cmd.extend(["-e", f"{key}={value}"])
@@ -626,7 +624,7 @@ class IswInstaller:
         cmd.extend(manage_args)
         return self._run(cmd, check=check, capture=capture)
 
-    def _create_mqtt_tcp_server_records(self) -> None:
+    def _create_mqtt_tcp_server_records(self):
         cmd = ["createmqttbroker", self.args.ip, self.args.mqtt_port, self.args.mqtt_tls_port]
         result = self._run_manage(*cmd, capture=True, check=False)
         if isinstance(result, str) and result:
@@ -644,7 +642,7 @@ class IswInstaller:
             else:
                 print(result)
 
-    def _wait_for_migrations(self, timeout: int = 180) -> bool:
+    def _wait_for_migrations(self, timeout=180):
         """等待容器内的 migrate 完成。
         
         通过轮询 `migrate --check` 的退出码来判断：
@@ -669,7 +667,7 @@ class IswInstaller:
         print(f"⚠️ Django migrate 在 {timeout}s 内未完成。")
         return False
 
-    def _run_init_emqx_script(self) -> None:
+    def _run_init_emqx_script(self):
         if self.args.skip_emqx_init:
             print("跳过 backend/init_emqx.py（--skip-emqx-init）")
             return
@@ -688,7 +686,7 @@ class IswInstaller:
         self._reload_credentials()
 
     # ------------------------------------------------------------------ pipeline
-    def run(self) -> None:
+    def run(self):
         # 仅执行公共产品导入（阶段9），跳过其他步骤
         if getattr(self.args, "only_import_public_products", False):
             print("\n=== 仅执行公共产品导入（gitee） ===")
@@ -789,7 +787,7 @@ class IswInstaller:
         print("\n=== 阶段 9：导入最新公共产品（gitee） ===")
         self._import_public_products()
 
-    def _print_summary(self) -> None:
+    def _print_summary(self):
         admin = self.credentials.get("iam_admin", {})
         emqx = self.credentials.get("emqx", {})
         influx = self.credentials.get("influxdb", {})
@@ -802,7 +800,7 @@ class IswInstaller:
         print("如需补充钉钉/短信等配置，请编辑 backend/.env 后执行 deploy/restart.sh。")
 
     # ------------------------------------------------------------------ public products from gitee
-    def _download_public_products_from_gitee(self) -> Path:
+    def _download_public_products_from_gitee(self):
         """
         从公开 gitee 仓库获取最新公共产品（无需 token），并打包成 importer 可识别的 zip。
         逻辑：
@@ -814,7 +812,7 @@ class IswInstaller:
         repo_dir = tmp_dir / "repo"
         output_zip = tmp_dir / "public_products.zip"
 
-        def _clone(branch: str) -> None:
+        def _clone(branch):
             print(f"克隆公共产品仓库... (branch={branch})")
             url = "https://gitee.com/children1987/eztcloud-public-product.git"
             self._run(
@@ -849,7 +847,7 @@ class IswInstaller:
 
         return output_zip
 
-    def _import_public_products(self) -> None:
+    def _import_public_products(self):
         """
         将 gitee 最新公共产品导入本地实例。
         步骤：
@@ -886,7 +884,7 @@ class IswInstaller:
         print("公共产品导入完成。")
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args():
     parser = argparse.ArgumentParser(description="EZtCloud (isw_v2) 自动化部署脚本")
     parser.add_argument("--ip", required=False, help="服务器 IP（用于 MQTT/TCP 记录、EMQX 配置）")
     parser.add_argument("--db-password", required=False, help="PostgreSQL 数据库密码")
@@ -920,7 +918,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def main() -> None:
+def main():
     try:
         installer = IswInstaller(parse_args())
         installer.run()
@@ -934,5 +932,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
 
