@@ -11,7 +11,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
 
 # 使用本地镜像源并正确导入 InfluxData key
 COPY sources.list /etc/apt/sources.list
-RUN rm -rf /etc/apt/sources.list.d && \
+RUN rm -rf /etc/apt/sources.list.d && mkdir -p /etc/apt/sources.list.d && \
     apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=30 && \
     apt-get install -y --no-install-recommends \
       ca-certificates \
