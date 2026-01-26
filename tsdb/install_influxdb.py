@@ -8,8 +8,6 @@ InfluxDB 初始化与启动脚本。
 3. 使用生成的凭证启动 InfluxDB Docker 容器。
 """
 
-from __future__ import annotations
-
 import json
 import secrets
 import string
@@ -17,7 +15,6 @@ import subprocess
 import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from typing import Dict, Any
 
 CONTAINER_NAME = "isw_v2_influxdb"
 IMAGE_NAME = "influxdb:2.7-alpine"
@@ -28,35 +25,36 @@ CONFIG_DIR = Path("/workspace/isw_v2/influxdb/config")
 CREDENTIAL_FILE = Path("/workspace/isw-helper/output/deploy_credentials.json")
 
 
-def run_command(cmd: list[str]) -> subprocess.CompletedProcess:
+def run_command(cmd):
     """执行子进程命令并输出日志。"""
     print(f"→ 执行命令: {' '.join(cmd)}")
-    return subprocess.run(cmd, check=True, text=True, capture_output=False)
+    return subprocess.run(cmd, check=True, universal_newlines=True)
 
 
-def generate_password(length: int = 24) -> str:
+def generate_password(length=24):
     """生成适用于环境变量的随机密码。"""
     alphabet = string.ascii_letters + string.digits + "_"
     return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
-def generate_token() -> str:
+def generate_token():
     """生成高熵 token。"""
     return secrets.token_hex(32)
 
 
-def container_exists() -> bool:
+def container_exists():
     """检查容器是否存在（包括运行中和已停止的）。"""
     result = subprocess.run(
         ["docker", "ps", "-a", "-q", "-f", f"name={CONTAINER_NAME}"],
-        text=True,
-        capture_output=True,
+        universal_newlines=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         check=False,
     )
-    return bool(result.stdout.strip())
+    return bool((result.stdout or "").strip())
 
 
-def load_existing_credentials() -> Dict[str, Any] | None:
+def load_existing_credentials():
     """从凭证文件中加载现有的 InfluxDB 凭证。"""
     if not CREDENTIAL_FILE.exists():
         return None
@@ -67,7 +65,7 @@ def load_existing_credentials() -> Dict[str, Any] | None:
         return None
 
 
-def write_credentials(password: str, token: str, update_password: bool = True) -> None:
+def write_credentials(password, token, update_password=True):
     """将凭证写入 JSON 文件，保留其他条目。
 
     Args:
@@ -77,7 +75,7 @@ def write_credentials(password: str, token: str, update_password: bool = True) -
     """
     CREDENTIAL_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-    payload: Dict[str, Any] = {}
+    payload = {}
     if CREDENTIAL_FILE.exists():
         try:
             payload = json.loads(CREDENTIAL_FILE.read_text(encoding="utf-8"))
@@ -94,7 +92,7 @@ def write_credentials(password: str, token: str, update_password: bool = True) -
             password = existing_password
         if existing_token:
             token = existing_token
-        print(f"⚠️ 检测到容器已存在，保留现有密码和 token（不更新 deploy_credentials.json）")
+        print("⚠️ 检测到容器已存在，保留现有密码和 token（不更新 deploy_credentials.json）")
 
     payload["influxdb"] = {
         "DOCKER_INFLUXDB_INIT_PASSWORD": password,
@@ -109,29 +107,29 @@ def write_credentials(password: str, token: str, update_password: bool = True) -
     if update_password:
         print(f"✓ 凭证已写入 {CREDENTIAL_FILE}")
     else:
-        print(f"✓ InfluxDB 凭证已更新（密码和 token 保持不变）")
+        print("✓ InfluxDB 凭证已更新（密码和 token 保持不变）")
 
 
-def ensure_directories() -> None:
+def ensure_directories():
     """保证 InfluxDB 数据与配置目录存在。"""
     for folder in (DATA_DIR, CONFIG_DIR):
         folder.mkdir(parents=True, exist_ok=True)
         print(f"✓ 目录已准备: {folder}")
 
 
-def remove_existing_container() -> None:
+def remove_existing_container():
     """删除同名容器，避免冲突。"""
     if container_exists():
         print(f"发现已有容器 {CONTAINER_NAME}，尝试删除...")
         subprocess.run(
             ["docker", "rm", "-f", CONTAINER_NAME],
             check=False,
-            text=True
+            universal_newlines=True
         )
         print("✓ 旧容器已删除")
 
 
-def start_container(password: str, token: str) -> None:
+def start_container(password, token):
     """启动 InfluxDB 容器。"""
     cmd = [
         "docker", "run", "-d",
@@ -154,7 +152,7 @@ def start_container(password: str, token: str) -> None:
     print(f"✓ 容器 {CONTAINER_NAME} 启动完成")
 
 
-def main() -> None:
+def main():
     try:
         ensure_directories()
         
@@ -170,27 +168,27 @@ def main() -> None:
                 token = existing_creds.get("INFLUXDB_TOKEN")
                 if password and token:
                     should_update_password = False  # 容器已存在且凭证文件中有密码，不更新密码
-                    print(f"✓ 检测到容器已存在，使用现有密码和 token（从 deploy_credentials.json 读取，不更新密码）")
+                    print("✓ 检测到容器已存在，使用现有密码和 token（从 deploy_credentials.json 读取，不更新密码）")
                 else:
                     # 如果凭证文件中没有密码或 token，说明持久化数据中可能有，但我们无法确定
                     # 注意：环境变量只在首次初始化时生效，如果持久化数据已存在，不会更新密码
-                    print(f"⚠️ 警告：容器已存在但凭证文件中缺少密码或 token")
-                    print(f"   由于 InfluxDB 持久化数据可能已存在，环境变量无法更新密码")
-                    print(f"   建议：")
-                    print(f"   1. 手动登录 InfluxDB 查看/修改密码和 token")
+                    print("⚠️ 警告：容器已存在但凭证文件中缺少密码或 token")
+                    print("   由于 InfluxDB 持久化数据可能已存在，环境变量无法更新密码")
+                    print("   建议：")
+                    print("   1. 手动登录 InfluxDB 查看/修改密码和 token")
                     print(f"   2. 或者删除持久化数据目录 {DATA_DIR} 后重新安装（会丢失所有数据）")
-                    print(f"   3. 或者手动将实际密码和 token 写入 deploy_credentials.json")
+                    print("   3. 或者手动将实际密码和 token 写入 deploy_credentials.json")
                     # 仍然生成占位密码和 token 写入凭证文件，但提示用户这不会生效
                     password = generate_password()
                     token = generate_token()
                     should_update_password = True  # 写入占位密码到凭证文件
-                    print(f"   已生成占位密码和 token 并写入凭证文件，但此密码不会生效（容器仍使用持久化数据中的密码）")
+                    print("   已生成占位密码和 token 并写入凭证文件，但此密码不会生效（容器仍使用持久化数据中的密码）")
             else:
                 # 凭证文件中没有 influxdb 部分
                 password = generate_password()
                 token = generate_token()
                 should_update_password = True
-                print(f"⚠️ 容器已存在但凭证文件中无 InfluxDB 凭证，生成新密码和 token（注意：可能需要手动同步）")
+                print("⚠️ 容器已存在但凭证文件中无 InfluxDB 凭证，生成新密码和 token（注意：可能需要手动同步）")
         else:
             # 容器不存在，生成新密码和 token
             password = generate_password()
@@ -217,4 +215,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
