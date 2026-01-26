@@ -255,7 +255,7 @@ def main():
         nginx_conf_dst_dir.mkdir(parents=True, exist_ok=True)
         try:
             subprocess.run(
-                ["cp", "-f", str(nginx_conf_src), str(nginx_conf_dst_dir / "emqx.conf")],
+                ["cp", "-f", str(nginx_conf_src), str(nginx_conf_dst_dir)],
                 check=False,
                 universal_newlines=True,
             )
