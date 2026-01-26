@@ -44,6 +44,10 @@ services:
       dockerfile: deploy/Dockerfile
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
+      # 挂载主板UUID文件（只读）
+      - /sys/devices/virtual/dmi/id/product_uuid:/sys/devices/virtual/dmi/id/product_uuid:ro
+      # 挂载machine-id文件（只读）
+      - /etc/machine-id:/etc/machine-id:ro
     command:
       - /bin/sh
       - -c
@@ -110,6 +114,10 @@ services:
       dockerfile: deploy/Dockerfile
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
+      # 挂载主板UUID文件（只读）
+      - /sys/devices/virtual/dmi/id/product_uuid:/sys/devices/virtual/dmi/id/product_uuid:ro
+      # 挂载machine-id文件（只读）
+      - /etc/machine-id:/etc/machine-id:ro
     command:
       - /bin/sh
       - -c
@@ -144,6 +152,10 @@ services:
       dockerfile: deploy/Dockerfile
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
+      # 挂载主板UUID文件（只读）
+      - /sys/devices/virtual/dmi/id/product_uuid:/sys/devices/virtual/dmi/id/product_uuid:ro
+      # 挂载machine-id文件（只读）
+      - /etc/machine-id:/etc/machine-id:ro
     command:
       - /bin/sh
       - -c
