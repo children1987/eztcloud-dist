@@ -78,6 +78,13 @@ class User(AbstractUser):
         help_text="是否已删除",
         default=False,
     )
+    max_project_count = models.PositiveIntegerField(
+        verbose_name='允许拥有的项目数',
+        help_text='允许该用户拥有的项目数量，为 null 表示无限制',
+        null=True,
+        blank=True,
+        default=1,
+    )
     token = models.CharField(
         help_text="机器用户可基于token访问API",
         max_length=64,
