@@ -44,7 +44,7 @@ def create_connector(emqx_server_ip, emqx_server_port, api_key, api_secret):
         "enable": True,
         "tags": [],
         # todo: "http://127.0.0.1" 应取自变量 SITE_BASE_URL
-        "url": "http://127.0.0.1/api/emqx_webhook/connection_event/",
+        "url": "http://127.0.0.1:8082/api/emqx_webhook/connection_event/",
         "headers": {},
         "connect_timeout": "15s",
         "pool_type": "random",
