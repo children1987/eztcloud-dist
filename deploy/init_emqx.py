@@ -17,7 +17,7 @@ BASE_URL = "/api/v5"
 CREDENTIAL_FILE = Path("/workspace/isw-helper/output/deploy_credentials.json")
 
 # 内置 MQTT 用户模板
-from .internal_user_templates import INTERNAL_USER_TEMPLATES
+from internal_user_templates import INTERNAL_USER_TEMPLATES
 
 
 def create_connector(emqx_server_ip, emqx_server_port, api_key, api_secret):
