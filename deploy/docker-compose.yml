@@ -3,7 +3,7 @@ version: "3.3"
 services:
   isw_v2_redis:
     container_name: isw_v2_redis
-    image: redis
+    image: redis:8.4.0-alpine
     command: redis-server /etc/redis/redis.conf
     volumes:
       - /workspace/isw_v2/redis_data:/data

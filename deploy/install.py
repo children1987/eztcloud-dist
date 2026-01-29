@@ -25,7 +25,7 @@ import time
 import tempfile
 import zipfile
 from pathlib import Path
-from .internal_user_templates import INTERNAL_USER_TEMPLATES
+from internal_user_templates import INTERNAL_USER_TEMPLATES
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
