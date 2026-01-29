@@ -1,8 +1,10 @@
 #!/bin/sh
 # 本文件用于重新部署后端服务
 
-
 project_name="isw_v2"
+
+# 固定到 deploy 目录运行，避免相对路径导致找不到文件
+cd /workspace/isw_v2/deploy || exit 1
 
 
 echo "git configging ..."
@@ -12,26 +14,19 @@ echo "git configging finished. "
 
 echo "git pull 开始"
 echo "如果不需要重新拉取代码，则可输入空用户名密码"
+cd /workspace/isw_v2 || exit 1
 git pull
-chmod +x auto_deploy*.sh
+chmod +x auto_deploy*.sh 2>/dev/null || true
+cd /workspace/isw_v2/deploy || exit 1
 echo "git pull 完成"
 
 
-# 前端静态文件生成
-# 方式1: 适用于服务器本地存放
-# echo "本地前端打包 开始"
-# docker run -it --rm --name mycnpm --network host -v /workspace/$project_name:/workspace/$project_name -w /workspace/$project_name/frontend_web_v5 children1987/mycnpm:12-alpine cnpm i
-# docker run -it --rm --name mycnpm --network host -v /workspace/$project_name:/workspace/$project_name -w /workspace/$project_name/frontend_web_v5 children1987/mycnpm:12-alpine cnpm run build
-# echo "本地前端打包 完成"
-# 方式2: 适用于cos存放
 echo "注意：请确保codeup流水线打包已完成"
 
 
 # 配置nginx
 nginx_cfg_file_name=$project_name"_local_nginx.conf"
 nginx_stream_cfg_file_name=$project_name"_tcp_nginx_stream.conf"
-# echo "remove old Nginx config file"
-# rm -f /workspace/nginx/projects/$nginx_cfg_file_name
 if [ ! -f "/workspace/nginx/projects/$nginx_cfg_file_name" ]; then
     echo "copy Nginx config file"
     mkdir -p /workspace/nginx/projects
@@ -49,29 +44,31 @@ fi
 
 TOKEN=${INFLUXDB_TOKEN}
 if grep -q '^INFLUXDB_TOKEN=' /workspace/isw_v2/backend/.env; then
-    # 如果存在，则更新其值
     sed -i "s#^INFLUXDB_TOKEN=.*#INFLUXDB_TOKEN=$TOKEN#" /workspace/isw_v2/backend/.env
 else
-    # 如果不存在，则创建这个变量
     echo "DOCKER_INFLUXDB_TOKEN=$TOKEN" >> /workspace/isw_v2/backend/.env
 fi
-cp ../backend/.env ./
 
-# 关键改动：isw:latest 只构建一次，避免 docker-compose 对同一个 tag 并行 build 导致冲突
-# 设置超时时间（秒），避免构建和启动大量容器时超时
+# backend/.env -> deploy/.env（容器编排依赖）
+cp /workspace/isw_v2/backend/.env /workspace/isw_v2/deploy/.env 2>/dev/null || true
+
+# 关键改动：共享镜像只构建一次，避免 docker-compose 对同一个 tag 并行 build 导致冲突
 export COMPOSE_HTTP_TIMEOUT=300
 
 echo "docker build isw:latest ..."
-docker build -t isw:latest -f deploy/Dockerfile /workspace/isw_v2
+docker build -t isw:latest -f /workspace/isw_v2/deploy/Dockerfile /workspace/isw_v2
 
-# 不再执行 docker-compose build，直接 up（会复用本地 isw:latest）
+echo "docker build log_saver_by_telegraf:latest ..."
+docker build -t log_saver_by_telegraf:latest -f /workspace/isw_v2/deploy/telegraf/Dockerfile /workspace/isw_v2/deploy
+
+# 不再执行 docker-compose build，直接 up（会复用本地 isw:latest / log_saver_by_telegraf:latest）
 echo "docker-compose up -d ..."
-docker-compose -p $project_name up -d
+docker-compose -f /workspace/isw_v2/deploy/docker-compose.yml -p $project_name up -d
 
 echo "docker-compose up -d finished."
 
-# 使用 logrotate 管理日志
-cp ./logrotate/* /etc/logrotate.d/
+# 使用 logrotate 管理日志（若目录不存在则忽略）
+cp /workspace/isw_v2/deploy/logrotate/* /etc/logrotate.d/ 2>/dev/null || true
 
 if [ `crontab -l | grep -c isw_v2` -eq 0 ];then
   crontab -l > old_crontab.backup
