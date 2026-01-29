@@ -19,9 +19,7 @@ services:
       - /sys/devices/virtual/dmi/id/product_uuid:/sys/devices/virtual/dmi/id/product_uuid:ro
       # 挂载machine-id文件（只读）
       - /etc/machine-id:/etc/machine-id:ro
-    build:
-      context: /workspace/isw_v2
-      dockerfile: deploy/Dockerfile
+
     #depends_on:
     #  - isw_v2_redis
     command: >
@@ -39,9 +37,7 @@ services:
   isw_v2_celery:
     image: isw:latest
     container_name: isw_v2_celery
-    build:
-      context: /workspace/isw_v2
-      dockerfile: deploy/Dockerfile
+
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
       # 挂载主板UUID文件（只读）
@@ -61,9 +57,7 @@ services:
   isw_v2_mqtt_receiver:
     image: isw:latest
     container_name: isw_v2_mqtt_receiver
-    build:
-      context: /workspace/isw_v2
-      dockerfile: deploy/Dockerfile
+
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
     command:
@@ -77,9 +71,7 @@ services:
   isw_v2_down_sender:
     image: isw:latest
     container_name: isw_v2_down_sender
-    build:
-      context: /workspace/isw_v2
-      dockerfile: deploy/Dockerfile
+
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
     command:
@@ -93,9 +85,7 @@ services:
   isw_v2_up_worker:
     image: isw:latest
     container_name: isw_v2_up_worker
-    build:
-      context: /workspace/isw_v2
-      dockerfile: deploy/Dockerfile
+
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
     command:
@@ -109,9 +99,7 @@ services:
   isw_v2_tcp_server:
     image: isw:latest
     container_name: isw_v2_tcp_server
-    build:
-      context: /workspace/isw_v2
-      dockerfile: deploy/Dockerfile
+
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
       # 挂载主板UUID文件（只读）
@@ -129,9 +117,7 @@ services:
   isw_v2_device_monitor:
     image: isw:latest
     container_name: isw_v2_device_monitor
-    build:
-      context: /workspace/isw_v2
-      dockerfile: deploy/Dockerfile
+
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
     command:
@@ -147,9 +133,7 @@ services:
   isw_v2_celery_beat:
     image: isw:latest
     container_name: isw_v2_celery_beat
-    build:
-      context: /workspace/isw_v2
-      dockerfile: deploy/Dockerfile
+
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
       # 挂载主板UUID文件（只读）
@@ -186,9 +170,7 @@ services:
   isw_v2_data_saver:
     image: isw:latest
     container_name: isw_v2_data_saver
-    build:
-      context: /workspace/isw_v2
-      dockerfile: deploy/Dockerfile
+
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
     command:
@@ -202,9 +184,7 @@ services:
   isw_v2_log_alarm_saver:
     image: log_saver_by_telegraf:latest
     container_name: isw_v2_log_alarm_saver
-    build:
-      context: .
-      dockerfile: telegraf/Dockerfile
+
     environment:
       - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
       - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
@@ -220,9 +200,7 @@ services:
   isw_v2_log_msg_saver:
     image: log_saver_by_telegraf:latest
     container_name: isw_v2_log_msg_saver
-    build:
-      context: .
-      dockerfile: telegraf/Dockerfile
+
     environment:
       - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
       - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
@@ -238,9 +216,7 @@ services:
   isw_v2_log_rule_saver:
     image: log_saver_by_telegraf:latest
     container_name: isw_v2_log_rule_saver
-    build:
-      context: .
-      dockerfile: telegraf/Dockerfile
+
     environment:
       - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
       - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
@@ -256,9 +232,7 @@ services:
   isw_v2_log_task_saver:
     image: log_saver_by_telegraf:latest
     container_name: isw_v2_log_task_saver
-    build:
-      context: .
-      dockerfile: telegraf/Dockerfile
+
     environment:
       - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
       - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
@@ -274,9 +248,7 @@ services:
   isw_v2_log_scene_saver:
     image: log_saver_by_telegraf:latest
     container_name: isw_v2_log_scene_saver
-    build:
-      context: .
-      dockerfile: telegraf/Dockerfile
+
     environment:
       - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
       - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
@@ -292,9 +264,7 @@ services:
   isw_v2_log_event_saver:
     image: log_saver_by_telegraf:latest
     container_name: isw_v2_log_event_saver
-    build:
-      context: .
-      dockerfile: telegraf/Dockerfile
+
     environment:
       - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
       - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
@@ -310,9 +280,7 @@ services:
   isw_v2_log_cmd_saver:
     image: log_saver_by_telegraf:latest
     container_name: isw_v2_log_cmd_saver
-    build:
-      context: .
-      dockerfile: telegraf/Dockerfile
+
     environment:
       - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
       - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
@@ -328,9 +296,7 @@ services:
   isw_v2_log_attr_down_saver:
     image: log_saver_by_telegraf:latest
     container_name: isw_v2_log_attr_down_saver
-    build:
-      context: .
-      dockerfile: telegraf/Dockerfile
+
     environment:
       - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
       - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
@@ -346,9 +312,7 @@ services:
   isw_v2_log_online_saver:
     image: log_saver_by_telegraf:latest
     container_name: isw_v2_log_online_saver
-    build:
-      context: .
-      dockerfile: telegraf/Dockerfile
+
     environment:
       - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
       - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
@@ -364,9 +328,7 @@ services:
   isw_v2_log_run_task_saver:
     image: log_saver_by_telegraf:latest
     container_name: isw_v2_log_run_task_saver
-    build:
-      context: .
-      dockerfile: telegraf/Dockerfile
+
     environment:
       - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
       - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
@@ -382,9 +344,7 @@ services:
   isw_v2_log_scene_run_saver:
     image: log_saver_by_telegraf:latest
     container_name: isw_v2_log_scene_run_saver
-    build:
-      context: .
-      dockerfile: telegraf/Dockerfile
+
     environment:
       - TELEGRAF_MQTT_RO_USER=${TELEGRAF_MQTT_RO_USER}
       - TELEGRAF_MQTT_RO_PASSWORD=${TELEGRAF_MQTT_RO_PASSWORD}
@@ -400,9 +360,7 @@ services:
   isw_v2_scene_engine:
     image: isw:latest
     container_name: isw_v2_scene_engine
-    build:
-      context: /workspace/isw_v2
-      dockerfile: deploy/Dockerfile
+
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
     command:
@@ -419,9 +377,7 @@ services:
   isw_v2_alarm_engine:
     image: isw:latest
     container_name: isw_v2_alarm_engine
-    build:
-      context: /workspace/isw_v2
-      dockerfile: deploy/Dockerfile
+
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
     command:
@@ -438,9 +394,7 @@ services:
   isw_v2_notifier:
     image: isw:latest
     container_name: isw_v2_notifier
-    build:
-      context: /workspace/isw_v2
-      dockerfile: deploy/Dockerfile
+
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
     command:
@@ -454,9 +408,7 @@ services:
   isw_v2_task_engine:
     image: isw:latest
     container_name: isw_v2_task_engine
-    build:
-      context: /workspace/isw_v2
-      dockerfile: deploy/Dockerfile
+
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
     command:
@@ -488,9 +440,7 @@ services:
   isw_v2_mqtt_sender:
     image: isw:latest
     container_name: isw_v2_mqtt_sender
-    build:
-      context: /workspace/isw_v2
-      dockerfile: deploy/Dockerfile
+
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
     command:
@@ -506,9 +456,7 @@ services:
   isw_v2_topic_transfer:
     image: isw:latest
     container_name: isw_v2_topic_transfer
-    build:
-      context: /workspace/isw_v2
-      dockerfile: deploy/Dockerfile
+
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
     command:
@@ -522,9 +470,7 @@ services:
   isw_v2_emqx_task_engine:
     image: isw:latest
     container_name: isw_v2_emqx_task_engine
-    build:
-      context: /workspace/isw_v2
-      dockerfile: deploy/Dockerfile
+
     volumes:
       - /workspace/isw_v2:/workspace/isw_v2
     command:
