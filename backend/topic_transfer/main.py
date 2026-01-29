@@ -1,20 +1,13 @@
-import os
-import sys
 import json
 import threading
 import time
 import traceback
-from pathlib import Path
 
 # 先设置 sys.path，确保可以导入 backend.*
 # 使用 Path(__file__).resolve() 确保始终得到绝对路径，兼容所有导入方式
-SCRIPT_DIR = Path(__file__).resolve().parent
-BASE_DIR = SCRIPT_DIR.parent
-PROJ_ROOT = BASE_DIR.parent
-if str(PROJ_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJ_ROOT))
+import _setup_backend
+import backend._setup_django
 
-import backend.topic_transfer._setup_django
 import backend.m_common.set_timezone
 from backend.apps.equipments.biz.device_manage import set_stream_topic_transfer
 from backend.topic_transfer.config import MQTT_CLIENT_ID, MQTT_HOST, MQTT_PORT, \

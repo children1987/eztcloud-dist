@@ -7,7 +7,7 @@ import backend.m_common.set_timezone
 
 from paho.mqtt.client import MQTTMessage
 
-import backend.alarm_engine._setup_django
+import backend._setup_django
 
 from backend.alarm_engine.assist_tool import AssistTool
 from backend.alarm_engine.config import MQTT_PASSWORD, MQTT_USERNAME, MQTT_PORT, \

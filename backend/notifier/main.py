@@ -1,11 +1,10 @@
 import json
 import time
 import traceback
-import uuid
 from copy import deepcopy
 
 import _add_sys_path
-import backend.notifier._setup_django
+import backend._setup_django
 import backend.m_common.set_timezone
 
 from django.contrib.auth import get_user_model

@@ -1,4 +1,3 @@
-import os
 import sys
 import time
 import traceback
@@ -12,7 +11,7 @@ PROJ_ROOT = BASE_DIR.parent
 if str(PROJ_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJ_ROOT))
 
-import backend.task_engine._setup_django
+import backend._setup_django
 # 切记：main中关于django models的引包需要放到该注释的下面
 import backend.m_common.set_timezone
 
@@ -23,11 +22,10 @@ from backend.m_common.mqtt_client import MQTTClient
 from backend.m_common.redi_db_const import TASK_DB
 from backend.task_engine.config import task_engine_logger as logger
 from backend.task_engine.data_manage import TaskDataManage
-from backend.task_engine.exec_manage import TaskExecManage
 from backend.task_engine.task_engine_config import BROKER_URL, USERNAME, \
     PASSWORD, MQTT_PORT, TASK_CREATE, TASK_UPDATE, TASK_DEL, MQTT_TLS
 from backend.apps.tasks.models import Tasks
-from backend.apps.tasks.serializers import TaskSerializer, TaskManagerSerializer
+from backend.apps.tasks.serializers import TaskManagerSerializer
 from backend.apps.celery_tasks.custom_tasks.tasks import parse_task_data
 
 

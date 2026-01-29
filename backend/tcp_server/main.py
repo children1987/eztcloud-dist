@@ -8,7 +8,7 @@ import traceback
 import _setup_backend  # noqa: F401
 
 # 第二步：在 sys.path 正确之后，初始化 Django 环境（DJANGO_SETTINGS_MODULE + django.setup）
-import backend.tcp_server._setup_django  # noqa: F401
+import backend._setup_django  # noqa: F401
 import backend.m_common.set_timezone
 
 import redis

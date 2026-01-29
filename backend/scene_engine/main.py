@@ -13,7 +13,7 @@ PROJ_ROOT = BASE_DIR.parent
 if str(PROJ_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJ_ROOT))
 
-import backend.scene_engine._setup_django
+import backend._setup_django
 # 切记：main中关于django models的引包需要放到该注释的下面
 import backend.m_common.set_timezone
 

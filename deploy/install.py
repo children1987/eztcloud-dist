@@ -25,6 +25,7 @@ import time
 import tempfile
 import zipfile
 from pathlib import Path
+from .internal_user_templates import INTERNAL_USER_TEMPLATES
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -430,8 +431,7 @@ class IswInstaller:
             "EMQX_API_HOST": env_map.get("EMQX_API_HOST", self.args.ip),
             "EMQX_API_PORT": env_map.get("EMQX_API_PORT", self.args.emqx_api_port),
             "EMQX_API_PROTOCOL": env_map.get("EMQX_API_PROTOCOL", "http"),
-            # EMQX 节点 IP 列表（单机部署默认 127.0.0.1）
-            "EMQX_IPS": env_map.get("EMQX_IPS", "127.0.0.1"),
+            "EMQX_IPS": env_map.get("EMQX_IPS", self.args.ip),
             # 提前占位，避免 Django settings 在 init_emqx 之前因缺少变量而报错
             "EMQX_ACCOUNT": env_map.get("EMQX_ACCOUNT", ""),
             "EMQX_PASSWORD": env_map.get("EMQX_PASSWORD", ""),
@@ -506,30 +506,11 @@ class IswInstaller:
             print(f"✓ deploy_credentials.json 中已有 {len(users)} 个 internal_users")
             return
         
-        # 如果不存在，提前生成 internal_users（与 init_emqx.py 中的逻辑一致）
+        # 如果不存在，提前生成 internal_users（与 init_emqx.py 中的逻辑一致，
+        # 模板统一来源于 INTERNAL_USER_TEMPLATES）
         print("⚠️ deploy_credentials.json 中未找到 internal_users，提前生成...")
         # INTERNAL_USER_TEMPLATES 与 init_emqx.py 保持一致
-        internal_user_templates = [
-            {"username": "frontend"},
-            {"username": "SU_telegraf_ro"},
-            {"username": "SU_mqtt_receiver"},
-            {"username": "SU_reader"},
-            {"username": "SU_down_sender"},
-            {"username": "SU_up_worker"},
-            {"username": "SU_web_server"},
-            {"username": "SU_rule_engine"},
-            {"username": "SU_task_engine"},
-            {"username": "SU_scene_engine"},
-            {"username": "SU_alarm_engine"},
-            {"username": "SU_device_shadow"},
-            {"username": "SU_device_monitor"},
-            {"username": "SU_notifier"},
-            {"username": "mcp_server"},
-            {"username": "SU_mqtt_sender"},
-            {"username": "SU_topic_transfer"},
-            {"username": "SU_mcq"},
-        ]
-        
+        internal_user_templates = INTERNAL_USER_TEMPLATES
         generated_users = []
         for tmpl in internal_user_templates:
             username = tmpl["username"]
@@ -668,11 +649,11 @@ class IswInstaller:
 
     def _run_init_emqx_script(self):
         if self.args.skip_emqx_init:
-            print("跳过 backend/init_emqx.py（--skip-emqx-init）")
+            print("跳过 deploy/init_emqx.py（--skip-emqx-init）")
             return
-        script = BACKEND_DIR / "init_emqx.py"
+        script = DEPLOY_DIR / "init_emqx.py"
         if not script.exists():
-            print("⚠️ 未找到 backend/init_emqx.py，跳过。")
+            print("⚠️ 未找到 deploy/init_emqx.py，跳过。")
             return
         emqx = self.credentials.get("emqx", {})
         dashboard_password = emqx.get("password")
@@ -680,7 +661,7 @@ class IswInstaller:
             raise InstallError("deploy_credentials.json 中缺少 emqx.password，请先执行 install_emqx.py。")
         self._run(
             ["python3", str(script), dashboard_password],
-            cwd=BACKEND_DIR,
+            cwd=DEPLOY_DIR,
         )
         self._reload_credentials()
 

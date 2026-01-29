@@ -1,10 +1,8 @@
-import json
 import time
-import traceback
 from concurrent.futures import ThreadPoolExecutor
 
 import _setup_backend
-import backend.device_monitor._setup_django
+import backend._setup_django
 import backend.m_common.set_timezone
 
 from backend.device_monitor.config import MQTT_HOST, MQTT_PORT, MQTT_TLS, MQTT_USERNAME, MQTT_PASSWORD, MQTT_CLIENT_ID, \

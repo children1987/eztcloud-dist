@@ -54,7 +54,7 @@ def write_credentials(
     username,
     password,
     ip=None,
-    dashboard_port=18084,
+    dashboard_port=58084,
     update_password=True,
 ):
     """将 EMQX 凭证写入 JSON 文件，保留其他条目。
