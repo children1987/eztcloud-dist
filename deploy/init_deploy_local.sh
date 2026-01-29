@@ -57,13 +57,17 @@ else
 fi
 cp ../backend/.env ./
 
-echo "docker-compose build ..."
+# 关键改动：isw:latest 只构建一次，避免 docker-compose 对同一个 tag 并行 build 导致冲突
 # 设置超时时间（秒），避免构建和启动大量容器时超时
 export COMPOSE_HTTP_TIMEOUT=300
-docker-compose build
 
+echo "docker build isw:latest ..."
+docker build -t isw:latest -f deploy/Dockerfile /workspace/isw_v2
+
+# 不再执行 docker-compose build，直接 up（会复用本地 isw:latest）
 echo "docker-compose up -d ..."
 docker-compose -p $project_name up -d
+
 echo "docker-compose up -d finished."
 
 # 使用 logrotate 管理日志
