@@ -323,7 +323,13 @@ class IswInstaller:
             print(f"正在从 IAM 同步 admin 用户 ({username})...")
             # 使用 Django 管理命令，命令会自动从 IAM 获取用户数据并同步
             self._sync_user_from_iam(username, password)
-            print("✓ 已从 IAM 同步 admin 用户到 eztcloud")
+            print("✓ 已从 IAM 同步 admin 用户资料到 eztcloud")
+
+            # 关键补充：调用 set_user_password 命令，强制将本地 admin 密码设置为 IAM admin 的密码
+            # 因为 sync_user 只同步用户资料，不处理密码
+            print(f"正在为本地 admin 用户设置密码...")
+            self._run_manage("set_user_password", username, password)
+
         except InstallError:
             # InstallError 已经包含详细的错误信息，直接抛出
             raise
