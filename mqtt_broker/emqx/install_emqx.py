@@ -250,7 +250,7 @@ def main():
 
         print("EMQX 部署完成。")
         # 同步 nginx 配置并重启 nginx（用于 EMQX 反向代理）
-        nginx_conf_src = BASE_DIR / "emqx_nginx.conf"
+        nginx_conf_src = BASE_DIR / 'nginx_conf' / "emqx_local_nginx.conf"
         nginx_conf_dst_dir = Path("/workspace/nginx/projects")
         nginx_conf_dst_dir.mkdir(parents=True, exist_ok=True)
         try:
