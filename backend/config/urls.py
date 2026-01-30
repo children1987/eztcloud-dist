@@ -46,7 +46,7 @@ from backend.apps.uploader.views import UploadViewSet
 from backend.apps.users.views import ErrorTimesView, UserViewSet, ProjectViewSet, ExtraLogin, \
     DeviceGroupViewSet, ProjectMemberViewSet, RegisterViewSet, ImageCaptchaView, \
     ProjectsDailyStatsViewSet
-from backend.apps.system_configs.views import SystemLicenseView, ModuleTrimView
+from backend.apps.system_configs.views import SystemLicenseView, ModuleTrimView, SystemPublicConfigsView
 from backend.apps.iam_client.urls import iam_client_urls
 
 router = routers.SimpleRouter()
@@ -135,8 +135,9 @@ urlpatterns = [
     path('api/projects/<str:project_key>/camera/ezviz/webhook/', EzvizWebhookView.as_view(), name='ezviz-webhook'),
     path('api/projects/<str:project_key>/camera/ezviz/token/', AccessTokenView.as_view(), name='ezviz-token'),
     path('api/domain/', DomainView.as_view(), name="domain"),
-    path('api/system/license/', SystemLicenseView.as_view(), name='system-license'),
-    path('api/system/module_trim/', ModuleTrimView.as_view(), name='system-module-trim'),
+    path('api/system/license/', SystemLicenseView.as_view(), name='system-license'),  # 待废弃
+    path('api/system/module_trim/', ModuleTrimView.as_view(), name='system-module-trim'),  # 待废弃
+    path('api/system/public_configs/', SystemPublicConfigsView.as_view(), name='system-public-configs'),
     path('i18n/', include('django.conf.urls.i18n')),
 
     # iam
