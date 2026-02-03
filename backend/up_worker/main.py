@@ -13,17 +13,34 @@ import time
 import traceback
 
 import _setup_backend
+import backend._setup_django
 import backend.m_common.set_timezone
 from backend.m_common.mq_factory import MqFactory
 from backend.m_common.mqtt_pub_client_factory import MQTTPublishClientFactory, \
     PublishClientNames, InternalPublishClientParams
-from backend.m_common.data_get_tool import GetDataHandler
 from backend.m_common.custom_logger import WATCH_LOG_LEVEL
 from backend.rule_engine.biz.tools import save_msg_log
 from backend.up_worker.config import up_worker_logger
 from backend.device_shadow.device_shadow import DeviceShadow
 from backend.up_worker.msg_handler_mapping import MSG_HANDLER
 from backend.up_worker.utils import DataTypeCheck
+
+# 子进程全局标记：是否已初始化Django
+DJANGO_INITIALIZED = False
+
+def init_django():
+    """
+    子进程内Django初始化函数，保证仅执行一次
+    """
+    global DJANGO_INITIALIZED
+    # 已初始化
+    if DJANGO_INITIALIZED:
+        return
+    try:
+        import backend._setup_django
+        DJANGO_INITIALIZED = True
+    except:
+        up_worker_logger.error(traceback.format_exc())
 
 
 def update_msg_info(msg, username, device_info):
@@ -46,7 +63,7 @@ def update_msg_info(msg, username, device_info):
     :return:
     """
     project_id = device_info['project']
-    project_info = GetDataHandler().get_project(project_id)
+    project_info = device_info['category']['project']
     info = {
         'project_id': project_id,   # 弃用，之后需要project数据直接从project字段取
         'project_name': project_info.get('name', project_id),  # 弃用，之后需要project数据直接从project字段取
@@ -99,6 +116,7 @@ def run(msg: dict):
     """
     up_worker_logger.debug(f'【up_worker_handler】:{msg}')
     try:
+        init_django()
         params_obj = InternalPublishClientParams(
             client_name=PublishClientNames.up_worker,
             logger=up_worker_logger,

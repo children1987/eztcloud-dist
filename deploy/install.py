@@ -424,7 +424,7 @@ class IswInstaller:
             # Redis / API
             "REDIS_HOST": env_map.get("REDIS_HOST", "127.0.0.1"),
             "REDIS_PORT": env_map.get("REDIS_PORT", "48025"),
-            "API_HOST": env_map.get("API_HOST", f"http://{self.args.ip}:8082"),
+            "API_HOST": env_map.get("API_HOST", f"http://{self.args.ip}:8082/"),
             # TCP Server 配置（固定默认值）
             "TCP_SERVER_HOST": env_map.get("TCP_SERVER_HOST", "127.0.0.1"),
             "TCP_SERVER_PORT": env_map.get("TCP_SERVER_PORT", "56879"),
