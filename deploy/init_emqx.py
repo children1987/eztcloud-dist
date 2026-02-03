@@ -82,13 +82,7 @@ def create_action(emqx_server_ip, emqx_server_port, api_key, api_secret):
         "tags": [],
         "parameters": {
             "method": "post",
-            "headers": {
-                "keep-alive": "timeout=5",
-                "content-type": "application/json",
-                "connection": "keep-alive",
-                "cache-control": "no-cache",
-                "accept": "application/json"
-            },
+            "headers": {},
             "max_retries": 2
         },
         "resource_opts": {

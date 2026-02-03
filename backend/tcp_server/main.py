@@ -237,8 +237,18 @@ class DeviceServer(protocol.Protocol):
                 'identifier': bind_tcp_li[0],
                 'communication_type': 'TCP'
             }
-            tcp_server_logger.debug(f'up_msg：{up_msg}')
-            self._up_mq.put_msg(pickle.dumps(up_msg))
+        else:
+            # todo 可优化
+            up_msg = {
+                'type': 'attributes',
+                'username': device,
+                'device_username': device,
+                'payload': data,
+                'time': get_utc_timestamp(),
+                'communication_type': 'TCP'
+            }
+        tcp_server_logger.debug(f'up_msg：{up_msg}')
+        self._up_mq.put_msg(pickle.dumps(up_msg))
 
     def dataReceived(self, data):
         """

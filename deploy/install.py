@@ -779,7 +779,7 @@ class IswInstaller:
         print("\n部署完成。关键信息：")
         print(f"- 业务访问地址: http://{self.args.ip}:8082")
         print(f"- IAM 管理员账号: {admin.get('username', 'admin')} / {admin.get('password', '<unknown>')}")
-        print(f"- EMQX 控制台: http://{self.args.ip}:58084 （admin / {emqx.get('password', '<unknown>')}）")
+        print(f"- EMQX 控制台: http://{self.args.ip}:{DEFAULT_EMQX_API_PORT} （admin / {emqx.get('password', '<unknown>')}）")
         print(f"- InfluxDB Token: {influx.get('INFLUXDB_TOKEN', '<unknown>')}")
         print(f"- 凭证文件: {CREDENTIALS_FILE}")
         print("如需补充钉钉/短信等配置，请编辑 backend/.env 后执行 deploy/restart.sh。")
