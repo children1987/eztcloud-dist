@@ -393,6 +393,18 @@ class DeviceCategory(models.Model):
         null=True,
         blank=True,
     )
+    control_attr_conf = models.JSONField(
+        verbose_name='属性控制配置',
+        help_text='移动端属性控制配置',
+        null=True,
+        blank=True,
+    )
+    show_attr_conf = models.JSONField(
+        verbose_name='属性显示配置',
+        help_text='移动端属性显示配置',
+        null=True,
+        blank=True,
+    )
     creator = models.ForeignKey(
         User,
         verbose_name='创建人',

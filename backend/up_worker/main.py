@@ -186,7 +186,11 @@ def run(msg: dict):
                 }
             }
             save_msg_log(updated_msg, msg_type, extra)
-            up_worker_logger.info(f'【up_worker】 设备：{username}上报数据格式校验失败 msg:{msg}')
+            # 截断超长日志打印
+            log_msg = str(msg)
+            if len(log_msg) > 512:
+                log_msg = log_msg[:512] + "... [truncated]"
+            up_worker_logger.info(f'【up_worker】 设备：{username}上报数据格式校验失败 msg:{log_msg}')
             return
         save_msg_log(updated_msg, msg_type)
         # 2. 根据不同的消息类型做出相应操作

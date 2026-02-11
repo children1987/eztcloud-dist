@@ -49,9 +49,28 @@ services:
       - -c
       - |
         cd /workspace/isw_v2/backend
-        celery -A apps.celery_tasks.main worker -l error -f ./log/celery.log
+        celery -A apps.celery_tasks.main worker -l error -f ./log/celery.log -Q celery
     #depends_on:
     #  - isw_v2_redis
+    restart: always
+    network_mode: "host"
+
+  isw_v2_celery_timer:
+    image: isw:latest
+    container_name: isw_v2_celery_timer
+
+    volumes:
+      - /workspace/isw_v2:/workspace/isw_v2
+      # 挂载主板UUID文件（只读）
+      - /sys/devices/virtual/dmi/id/product_uuid:/sys/devices/virtual/dmi/id/product_uuid:ro
+      # 挂载machine-id文件（只读）
+      - /etc/machine-id:/etc/machine-id:ro
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /workspace/isw_v2/backend
+        celery -A apps.celery_tasks.main worker -l error -f ./log/celery_timer.log -Q timer_tasks --concurrency=1
     restart: always
     network_mode: "host"
   isw_v2_mqtt_receiver:
