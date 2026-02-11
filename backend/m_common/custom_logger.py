@@ -60,6 +60,52 @@ def get_log_level(is_str=True):
     return log_level
 
 
+class TruncatingFilter(logging.Filter):
+    """
+    日志内容自动截断过滤器 - 升级版
+    同时处理直接消息(record.msg)和参数化日志(record.args)
+    """
+    def __init__(self, max_len=512):
+        super().__init__()
+        self.max_len = max_len
+
+    def _truncate(self, obj):
+        try:
+            s = str(obj)
+            if len(s) > self.max_len:
+                return s[:self.max_len] + "... [auto-truncated]"
+            return obj # 保持原样，减少不必要的字符串转换
+        except Exception:
+            return "[truncate-error]"
+
+    def filter(self, record):
+        # 避免重复过滤
+        if getattr(record, '_truncated', False):
+            return True
+        
+        try:
+            # 1. 处理直接消息
+            if isinstance(record.msg, str):
+                if len(record.msg) > self.max_len:
+                    record.msg = record.msg[:self.max_len] + "... [auto-truncated]"
+            elif not record.args: # logger.info(big_dict) 这种 record.msg 是对象
+                record.msg = self._truncate(record.msg)
+
+            # 2. 处理参数化日志 logger.info("msg: %s", big_dict)
+            if record.args:
+                if isinstance(record.args, dict):
+                    new_args = {k: self._truncate(v) for k, v in record.args.items()}
+                    record.args = new_args
+                else:
+                    new_args = tuple(self._truncate(arg) for arg in record.args)
+                    record.args = new_args
+            
+            record._truncated = True
+        except Exception:
+            pass
+        return True
+
+
 class LogLevelHandler(FileSystemEventHandler):
 
     LEVEL_NAME_MAP = {
@@ -85,20 +131,37 @@ class LogLevelHandler(FileSystemEventHandler):
         try:
             c_log_level = get_log_level(is_str=False)
             if c_log_level not in LEVEL_MAP:
-                # 日志级别设置错误
                 return
+
             old_log_level = self.log_level
             self.log_level = c_log_level
+
+            trunc_filter = TruncatingFilter(max_len=512)
+
             for logger_obj in logging.root.manager.loggerDict.values():
                 if not isinstance(logger_obj, logging.Logger):
                     continue
-                if (logger_obj.name not in CHANGE_LOGGER) or (logger_obj.level == c_log_level):
+                if logger_obj.name not in CHANGE_LOGGER:
                     continue
-                logger_obj.setLevel(c_log_level)
+
+                # Apply level
+                if logger_obj.level != c_log_level:
+                    logger_obj.setLevel(c_log_level)
+
+                # Apply truncation filter once
+                has_filter = False
+                for f in list(getattr(logger_obj, 'filters', [])):
+                    if isinstance(f, TruncatingFilter):
+                        has_filter = True
+                        break
+                if not has_filter:
+                    logger_obj.addFilter(trunc_filter)
+
                 logger_obj.info(
                     f'logger: {logger_obj.name}, level_change: {old_log_level} --> {c_log_level}, '
                     f'c_log_level: {logger_obj.level}'
                 )
+
                 if logger_obj.name == 'my' or self.logger_obj is None:
                     self.logger_obj = logger_obj
         except Exception as e:
