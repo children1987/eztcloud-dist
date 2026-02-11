@@ -5,6 +5,7 @@ docker stop \
     isw_v2_scene_engine \
     isw_v2_device_monitor \
     isw_v2_celery \
+    isw_v2_celery_timer \
     isw_v2_mqtt_sender \
     isw_v2_celery_beat \
     isw_v2_tcp_server \
