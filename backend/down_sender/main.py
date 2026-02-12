@@ -13,6 +13,7 @@ import traceback
 import redis
 
 import _setup_backend
+import backend._setup_django
 import backend.m_common.set_timezone
 
 from backend.down_sender.config import down_sender_logger

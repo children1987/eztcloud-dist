@@ -4,8 +4,8 @@ import time
 import traceback
 
 import _setup_backend
+import backend._setup_django
 import backend.m_common.set_timezone
-from backend.device_shadow.device_shadow import DeviceShadow
 from backend.mqtt_receiver.config import MQTT_CLIENT_ID, MQTT_HOST, MQTT_PORT, \
     MQTT_USERNAME, MQTT_PASSWORD, MQTT_TLS, mqtt_receiver_logger
 from backend.m_common.mqtt_client import MQTTClient
