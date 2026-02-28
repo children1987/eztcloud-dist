@@ -302,11 +302,19 @@ class MQTTReceiver(MQTTClient):
             ('internal/connect/+', 0),  # 设备上线
         ])
 
-
-@catch_exception(default_error_message='告警引擎出错', logger=alarm_logger)
+@rerun(default_rerun_message="告警引擎出错", logger=alarm_logger)
 def main():
-    receiver = MQTTReceiver(MQTT_CLIENT_ID+str(uuid.uuid4()), MQTT_HOST, MQTT_PORT,
-                            MQTT_USERNAME, MQTT_PASSWORD, tls=MQTT_TLS, logger=alarm_logger)
+    receiver = MQTTReceiver(
+        MQTT_CLIENT_ID+str(uuid.uuid4()),
+        MQTT_HOST, MQTT_PORT,
+        MQTT_USERNAME,
+        MQTT_PASSWORD,
+        tls=MQTT_TLS,
+        logger=alarm_logger,
+        reconnect_min_delay=2,
+        reconnect_max_delay=10,
+        retry_first_connection=True
+    )
     receiver.loop_forever()
 
 

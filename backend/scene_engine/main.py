@@ -1,4 +1,3 @@
-import os
 import sys
 import time
 import traceback
@@ -19,11 +18,12 @@ import backend.m_common.set_timezone
 
 from django.conf import settings
 from django_celery_beat.models import PeriodicTask
-from multiprocessing import Process
 from backend.m_common.mqtt_client import MQTTClient
 from backend.m_common.redi_db_const import SCENE_DB
+from backend.m_common.debugger import rerun
 from backend.scene_engine.scene_config import BROKER_URL, USERNAME, \
-    PASSWORD, MQTT_PORT, INTERNAL_DATA, MQTT_TLS, ON_LINE, OFF_LINE
+    PASSWORD, MQTT_PORT, INTERNAL_DATA, MQTT_TLS, ON_LINE, OFF_LINE, \
+    MQTT_RECONNECT_MIN_DELAY, MQTT_RECONNECT_MAX_DELAY
 from backend.scene_engine.scene_manage import SceneManager
 from backend.apps.scenes.models import SceneConfig
 from backend.apps.scenes.serializers import SceneDataSerializer, SceneTimingSerializer
@@ -109,27 +109,32 @@ class SceneEngineServe(object):
         启动 mqtt server
         :return:
         """
-        try:
-            client = SceneReceiverServer(
-                client_id=f'su_scene_{int(time.time()*1000)}',
-                broker_url=BROKER_URL,
-                port=MQTT_PORT,
-                username=USERNAME,
-                password=PASSWORD,
-                tls=MQTT_TLS,
-                logger=logger
-            )
-            logger.info('client.loop_forever()')
-            client.loop_forever()
-        except Exception as _:
-            error_msg = 'SceneReceiverServer服务启动失败：{}'.format(traceback.format_exc())
-            logger.error(error_msg)
+        client = SceneReceiverServer(
+            client_id=f'su_scene_{int(time.time()*1000)}',
+            broker_url=BROKER_URL,
+            port=MQTT_PORT,
+            username=USERNAME,
+            password=PASSWORD,
+            tls=MQTT_TLS,
+            logger=logger,
+            # 当 broker 首次不可用或运行中断线时，按配置的间隔自动重连
+            reconnect_min_delay=MQTT_RECONNECT_MIN_DELAY,
+            reconnect_max_delay=MQTT_RECONNECT_MAX_DELAY,
+            retry_first_connection=True,
+        )
+        logger.info(
+            'client.loop_forever() with auto reconnect: '
+            'min_delay=%s, max_delay=%s',
+            MQTT_RECONNECT_MIN_DELAY,
+            MQTT_RECONNECT_MAX_DELAY,
+        )
+        client.loop_forever()
 
     @staticmethod
     def get_redis_conn(redis_db):
         """
         实现一个连接池
-        :param db:
+        :param redis_db:
         :return:
         """
         return SceneManager.get_redis_conn(redis_db)
@@ -176,18 +181,9 @@ class SceneEngineServe(object):
         # 启动 mqtt server
         self.start_receiver_server()
 
-
+@rerun(default_rerun_message='SceneEngine服务重启中', timeout=5,  logger=logger)
 def main():
-    error_numb = 0
-    while True:
-        try:
-            SceneEngineServe().run()
-        except Exception as e:
-            error_msg = 'SceneEngine服务启动失败：{}'.format(traceback.format_exc())
-            logger.error(error_msg)
-            if error_numb <= 3:
-                error_numb += 1
-            time.sleep(error_numb * 20)
+    SceneEngineServe().run()
 
 
 if __name__ == '__main__':

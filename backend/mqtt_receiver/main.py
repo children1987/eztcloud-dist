@@ -71,7 +71,10 @@ class MQTTChannelClient(MQTTClient):
             username,
             password,
             tls=False,
-            logger=None
+            logger=None,
+            reconnect_min_delay=None,
+            reconnect_max_delay=None,
+            retry_first_connection=False,
     ):
         super().__init__(client_id=client_id,
                          broker_url=broker_url,
@@ -79,7 +82,11 @@ class MQTTChannelClient(MQTTClient):
                          username=username,
                          password=password,
                          tls=tls,
-                         logger=logger)
+                         logger=logger,
+                         reconnect_min_delay=None,
+                         reconnect_max_delay=None,
+                         retry_first_connection=False,
+                         )
         self.mq_interface = MqFactory().get_mq('up')
 
     def on_connect(self, client, user_data, flags, rc):
@@ -179,6 +186,10 @@ class MQTTChannel(object):
             password,
             tls=MQTT_TLS,
             logger=logger,
+            reconnect_min_delay=2,
+            reconnect_max_delay=10,
+            # 当 broker 首次不可用或运行中断线时，按配置的间隔自动重连
+            retry_first_connection=True,
         )
         client.loop_forever()
 

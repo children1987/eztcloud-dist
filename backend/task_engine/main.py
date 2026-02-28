@@ -27,6 +27,7 @@ from backend.task_engine.task_engine_config import BROKER_URL, USERNAME, \
 from backend.apps.tasks.models import Tasks
 from backend.apps.tasks.serializers import TaskManagerSerializer
 from backend.apps.celery_tasks.custom_tasks.tasks import parse_task_data
+from backend.m_common.debugger import rerun
 
 
 class TasksReceiverServer(MQTTClient):
@@ -106,7 +107,10 @@ class TaskEngineServe(object):
             username=USERNAME,
             password=PASSWORD,
             tls=MQTT_TLS,
-            logger=logger
+            logger=logger,
+            reconnect_min_delay=2,
+            reconnect_max_delay=10,
+            retry_first_connection=True
         )
         logger.info('client.loop_forever()')
         client.loop_forever()
@@ -139,13 +143,9 @@ class TaskEngineServe(object):
         self.start_receiver_server()
 
 
+@rerun(default_rerun_message='TaskEngine服务重启中', timeout=5,  logger=logger)
 def main():
-    try:
-        TaskEngineServe().run()
-    except Exception as e:
-        error_msg = 'TaskEngine服务启动失败：{}'.format(traceback.format_exc())
-        logger.error(error_msg)
-        logger.error(traceback.format_exc())
+    TaskEngineServe().run()
 
 
 if __name__ == '__main__':

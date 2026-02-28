@@ -127,7 +127,7 @@ class FixedProduct(models.Model):
         unique=True,
         default=None,
         null=True,
-        help_text='形如: company.product.specification.version'
+        help_text='形如: company.product.specification（不含版本信息）'
     )
     key = models.CharField(
         verbose_name='产品Key',
@@ -172,6 +172,13 @@ class FixedProduct(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+    )
+    # 文档信息
+    documentation = models.JSONField(
+        verbose_name='文档信息',
+        help_text='包含设备文档路径、文档版本等信息',
+        null=True,
+        blank=True
     )
     conf = models.JSONField(
         verbose_name='设备类型相关的全量配置信息',
@@ -238,6 +245,69 @@ class FixedProductFiles(models.Model):
         null=True,
         blank=True,
     )
+
+
+class FixedProductVersion(models.Model):
+    """公共产品版本"""
+    class Meta:
+        verbose_name = '公共产品版本'
+        verbose_name_plural = verbose_name
+    
+    # 关联到公共产品
+    fixed_product = models.ForeignKey(
+        FixedProduct,
+        related_name='versions',
+        on_delete=models.CASCADE,
+        verbose_name='公共产品'
+    )
+    
+    # 版本信息
+    version = models.CharField(
+        verbose_name='版本号',
+        help_text='版本号，如 v1.0.0',
+        max_length=20
+    )
+    
+    # 版本配置（不包含文档信息）
+    conf = models.JSONField(
+        verbose_name='版本配置信息',
+        help_text='包含功能定义、自定义数据流、规则、告警、任务、topic映射等信息（不包含文档信息）'
+    )
+    
+    # 发布状态
+    publish_state = models.CharField(
+        verbose_name='发布状态',
+        help_text='发布状态',
+        max_length=20,
+        choices=FixedProduct.PUBLISH_STATE_,
+        default='unpublished'
+    )
+    
+    # 发布时间（状态首次切换为 published 的时间）
+    publish_time = models.DateTimeField(
+        verbose_name='发布时间',
+        help_text='发布时间（版本首次发布的时间）',
+        null=True,
+        blank=True,
+    )
+    
+    # 是否默认版本
+    is_default = models.BooleanField(
+        verbose_name='是否默认版本',
+        help_text='标记为默认版本的将被优先使用',
+        default=False
+    )
+    
+    # 时间戳
+    created_time = models.DateTimeField(
+        verbose_name="创建时间",
+        help_text="创建时间",
+        default=timezone.now
+    )
+    
+    # 唯一约束
+    class Meta:
+        unique_together = ('fixed_product', 'version')
 
 
 class DeviceCategory(models.Model):
@@ -363,6 +433,22 @@ class DeviceCategory(models.Model):
         on_delete=models.SET_NULL,
         help_text='当产品类型quote_product为产品类型（P）时，必传',
         max_length=20,
+        null=True,
+        blank=True,
+    )
+    source_fixed_product = models.ForeignKey(
+        FixedProduct,
+        verbose_name='来源公共产品',
+        related_name='source_device_categories',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    source_fixed_product_version = models.ForeignKey(
+        FixedProductVersion,
+        verbose_name='来源公共产品版本',
+        related_name='source_device_categories',
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )

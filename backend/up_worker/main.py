@@ -25,20 +25,16 @@ from backend.device_shadow.device_shadow import DeviceShadow
 from backend.up_worker.msg_handler_mapping import MSG_HANDLER
 from backend.up_worker.utils import DataTypeCheck
 
-# 子进程全局标记：是否已初始化Django
-DJANGO_INITIALIZED = False
 
 def init_django():
     """
     子进程内Django初始化函数，保证仅执行一次
     """
-    global DJANGO_INITIALIZED
-    # 已初始化
-    if DJANGO_INITIALIZED:
-        return
+
     try:
-        import backend._setup_django
-        DJANGO_INITIALIZED = True
+        from django.conf import settings
+        if not settings.configured:
+            import backend._setup_django
     except:
         up_worker_logger.error(traceback.format_exc())
 

@@ -98,6 +98,7 @@ fix_product_router.register('files', FixedProductFilesViewSet, 'fix_product_file
 project_router = routers.NestedSimpleRouter(router, 'projects', lookup='project')
 project_router.register('tags', TagViewSet)
 project_router.register('devices', DevicesViewSet, basename='devices')
+project_router.register('scenes', SceneConfigViewSet,  basename='scenes')
 project_router.register('device_categories', DeviceCategoryViewSet, basename='device_categories')
 project_router.register('device_data', DeviceDataViewSet)
 project_router.register('alarm_logs', AlarmLogViewSet)
@@ -112,6 +113,28 @@ project_router.register('control_panel_buttons', ControlPanelButtonViewSet, base
 project_router.register('camera/ezviz/config', EzvizConfigViewSet, basename='ezviz-config')
 project_router.register('camera/ezviz/channels', CameraChannelViewSet, basename='ezviz-channels')
 project_router.register('camera/ezviz/alarms', CameraAlarmViewSet, basename='ezviz-alarms')
+project_router.register('fixed_products', FixedProductViewSet, basename='project-fixed-products')
+
+# --- 新增一套 RESTful 嵌套路由（保留原 router.register 的老路由不变） ---
+# 目标：同时支持 /api/<resource> 与 /api/projects/<project_pk>/<resource> 两种访问方式
+project_router.register('project_members', ProjectMemberViewSet, basename='project-project-members')
+project_router.register('category_commands', CategoryCommandViewSet, basename='project-category-commands')
+project_router.register('category_events', CategoryEventViewSet, basename='project-category-events')
+project_router.register('category_attrs', CategoryAttrViewSet, basename='project-category-attrs')
+project_router.register('category_data_streams', CategoryDataStreamViewSet, basename='project-category-data-streams')
+project_router.register('category_mod_bus', CategoryModBusViewSet, basename='project-category-mod-bus')
+project_router.register('alarm_notice_group', AlarmNoticeGroupViewSet, basename='project-alarm-notice-group')
+project_router.register('alarms', AlarmViewSet, basename='project-alarms')
+project_router.register('alarm_devices', AlarmDeviceViewSet, basename='project-alarm-devices')
+project_router.register('tasks', TaskViewSet, basename='project-tasks')
+project_router.register('task_actions', TaskActionViewSet, basename='project-task-actions')
+project_router.register('task_devices', TaskDeviceViewSet, basename='project-task-devices')
+project_router.register('rules', RuleViewSet, basename='project-rules')
+project_router.register('rule_actions', RuleActionViewSet, basename='project-rule-actions')
+project_router.register('rule_devices', RuleDeviceViewSet, basename='project-rule-devices')
+project_router.register('device_groups', DeviceGroupViewSet, basename='project-device-groups')
+project_router.register('notice', NoticeViewSet, basename='project-notice')
+project_router.register('notice_users', NotifyRecordUserViewSet, basename='project-notice-users')
 
 api_v1 = [
     path('iam/', include((iam_client_urls, 'iam'), namespace="iam")),
