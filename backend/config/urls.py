@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from rest_framework_nested import routers
 
-from apps.custom_reqlogs.views import CustomRequestLogsViewSets
+from backend.apps.custom_reqlogs.views import CustomRequestLogsViewSets
 
 
 def root_view(request):
