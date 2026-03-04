@@ -9,6 +9,9 @@ from django.http import JsonResponse
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from rest_framework_nested import routers
 
+from apps.custom_reqlogs.views import CustomRequestLogsViewSets
+
+
 def root_view(request):
     """根路径视图，返回简单的API信息"""
     return JsonResponse({
@@ -51,6 +54,7 @@ from backend.apps.iam_client.urls import iam_client_urls
 
 router = routers.SimpleRouter()
 router.register('projects', ProjectViewSet, basename='project')
+router.register('request_logs', CustomRequestLogsViewSets, 'request_logs')
 router.register('project_members', ProjectMemberViewSet, 'project_members')
 router.register('uploader', UploadViewSet, 'uploader')
 router.register('device_category', DeviceCategoryViewSet, 'device_category')
@@ -96,10 +100,10 @@ fix_product_router = routers.NestedSimpleRouter(router, 'fix_products', lookup='
 fix_product_router.register('files', FixedProductFilesViewSet, 'fix_product_files')
 
 project_router = routers.NestedSimpleRouter(router, 'projects', lookup='project')
-project_router.register('tags', TagViewSet)
-project_router.register('devices', DevicesViewSet, basename='devices')
-project_router.register('scenes', SceneConfigViewSet,  basename='scenes')
-project_router.register('device_categories', DeviceCategoryViewSet, basename='device_categories')
+project_router.register('tags', TagViewSet, basename='project-tags')
+project_router.register('devices', DevicesViewSet, basename='project-devices')
+project_router.register('scenes', SceneConfigViewSet,  basename='project-scenes')
+project_router.register('device_categories', DeviceCategoryViewSet, basename='project-device-categories')
 project_router.register('device_data', DeviceDataViewSet)
 project_router.register('alarm_logs', AlarmLogViewSet)
 project_router.register('rule_logs', RuleLogViewSet)
@@ -118,6 +122,7 @@ project_router.register('fixed_products', FixedProductViewSet, basename='project
 # --- 新增一套 RESTful 嵌套路由（保留原 router.register 的老路由不变） ---
 # 目标：同时支持 /api/<resource> 与 /api/projects/<project_pk>/<resource> 两种访问方式
 project_router.register('project_members', ProjectMemberViewSet, basename='project-project-members')
+project_router.register('request_logs', CustomRequestLogsViewSets, basename='project-request_logs')
 project_router.register('category_commands', CategoryCommandViewSet, basename='project-category-commands')
 project_router.register('category_events', CategoryEventViewSet, basename='project-category-events')
 project_router.register('category_attrs', CategoryAttrViewSet, basename='project-category-attrs')
