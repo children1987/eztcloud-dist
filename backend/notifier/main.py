@@ -34,7 +34,7 @@ class Notifier(object):
     _mqtt_client = MQTTPublishClientFactory.get_mqtt_client(params_obj=_params_obj)
 
     @staticmethod
-    def _sms(aims: list, template_key, params: list, **kwargs):
+    def _sms(aims, template_key, params, **kwargs):
         """
         以短信的形式通知用户
         """
@@ -82,7 +82,7 @@ class Notifier(object):
 
 
     @staticmethod
-    def _email(aims: list, template_key, params: list, **kwargs):
+    def _email(aims, template_key, params, **kwargs):
         """
         以email的形式通知用户
         """
@@ -101,7 +101,7 @@ class Notifier(object):
         em.send(em_msg)
 
     @classmethod
-    def _ding_robot(cls, aims: dict, template_key, params: list, **kwargs):
+    def _ding_robot(cls, aims, template_key, params, **kwargs):
         """
         以钉钉群消息的形式通知用户
         """
@@ -114,7 +114,7 @@ class Notifier(object):
         logger.debug(f"ding_robot message_status: {res}")
 
     @classmethod
-    def _ding_work(cls, aims: list, template_key, params: list, **kwargs):
+    def _ding_work(cls, aims, template_key, params: list, **kwargs):
         title_params = kwargs['title_params']
         ding_work_template = NOTIFY_TEMPLATE[template_key]['template']['ding_work']
         msg_body = {
@@ -147,7 +147,7 @@ class Notifier(object):
             logger.info(res)
 
     @classmethod
-    def _mqtt(cls, aims: list, template_key, params: list, **kwargs):
+    def _mqtt(cls, aims, template_key, params: list, **kwargs):
         """
         Args:
             aims: ["topic",]
