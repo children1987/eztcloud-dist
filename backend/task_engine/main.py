@@ -1,5 +1,6 @@
 import sys
 import time
+import json
 import traceback
 from pathlib import Path
 
@@ -92,7 +93,7 @@ class TaskEngineServe(object):
         :return:
         """
         self.clear_task_redis()
-        self.close_all_tinging_task()
+        # self.close_all_tinging_task()
 
     @staticmethod
     def start_receiver_server():
@@ -128,13 +129,15 @@ class TaskEngineServe(object):
             is_deleted=False
         ).all()
         ret = TaskManagerSerializer(scene_qs, many=True).data
-        for scene_data in ret:
-            TaskDataManage.redis_save_task(scene_data)
-            TaskDataManage.start_task(scene_data)
+        redis_conn = TaskDataManage.get_redis_conn(TASK_DB)
+        for task_data in ret:
+            task_id = task_data['id']
+            redis_conn.set(f'task_{task_id}', value=json.dumps(task_data))
+            TaskDataManage.start_task(task_data)
         logger.info("TaskEngine服务 初始完成！")
 
     def run(self):
-        # 1，删除 原redis 缓存 关闭所有celery_beat定时任务
+        # 1，删除 原redis 缓存
         self.del_task_data()
         # 3 读取 mysql 中 所有任务数据 缓存到数据库中
         receiver_server = Process(target=self.init_task_data, args=(20, ))
