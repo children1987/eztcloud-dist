@@ -71,8 +71,8 @@ class SceneConfig(BaseModel):
         default=0,
     )
     interval_seconds = models.PositiveIntegerField(
-        verbose_name='重发间隔(30-300秒)',
-        help_text='重发间隔(30-300秒)',
+        verbose_name='重发间隔(1-300秒)',
+        help_text='重发间隔(1-300秒)',
         default=60
     )
     order = models.IntegerField(
