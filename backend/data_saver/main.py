@@ -30,7 +30,7 @@ class SaveDataUtils(object):
         return json.dumps(o_str)
 
     @classmethod
-    def format_for_saving(cls, attrs: dict) -> list:
+    def format_for_saving(cls, attrs: dict):
         """
         格式化数据，将数据转换为InfluxDB的格式
         :param attrs: 需要格式化的数据，样例：
