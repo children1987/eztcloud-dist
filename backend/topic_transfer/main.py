@@ -1,3 +1,4 @@
+import base64
 import json
 import threading
 import time
@@ -62,15 +63,71 @@ class MQTTChannelClient(MQTTClient):
         """
         try:
             logger.debug(
-                f'got new message: topic={msg.topic}, payload={msg.payload}'
+                'got new message: topic=%s, payload_len=%s',
+                msg.topic,
+                len(msg.payload) if msg.payload is not None else None
             )
-            msg_data = json.loads(msg.payload.decode())
+            msg_data = _parse_incoming_mqtt_payload_to_dict(msg.payload)
             topic = str(msg.topic).replace('topic_transfer/', '', 1)
             obj_manager = TopicTransferManager(topic, msg_data)
             p = threading.Thread(target=obj_manager.parse_msg)
             p.start()
         except Exception:
             logger.error(traceback.format_exc())
+
+
+def _parse_incoming_mqtt_payload_to_dict(raw_payload):
+    """
+    将 mqtt 的 msg.payload 转成标准 dict。
+
+    兼容两类输入：
+    - 标准 JSON（utf-8 编码，payload 字段也是标准 JSON 值：str/dict/list/...）
+    - 非标准“JSON 头 + 二进制 payload”（你日志里那种：... "payload": \\xee\\xee... }）
+      这种情况下会把 payload 的二进制段原样提取成 bytes，并额外附上 payload_b64 方便日志/排查。
+    """
+    if raw_payload is None:
+        raise ValueError('mqtt payload is None')
+
+    # paho mqtt 通常给 bytes；这里也兼容 str
+    if isinstance(raw_payload, str):
+        raw_payload = raw_payload.encode('utf-8', errors='surrogatepass')
+    if not isinstance(raw_payload, (bytes, bytearray)):
+        raise TypeError(f'unsupported payload type: {type(raw_payload)}')
+
+    raw_payload = bytes(raw_payload)
+
+    # 1) 标准 JSON：直接解析即可
+    try:
+        return json.loads(raw_payload)
+    except UnicodeDecodeError:
+        # 2) 兼容 payload 内混入二进制导致 utf-8 decode 失败
+        pass
+
+    key = b'"payload"'
+    idx = raw_payload.find(key)
+    if idx < 0:
+        raise ValueError('payload is not valid utf-8 json, and no "payload" key found')
+
+    colon = raw_payload.find(b':', idx + len(key))
+    if colon < 0:
+        raise ValueError('invalid message: no ":" after "payload" key')
+
+    start = colon + 1
+    while start < len(raw_payload) and raw_payload[start] in b' \t\r\n':
+        start += 1
+
+    end = raw_payload.rfind(b'}')
+    if end < 0 or end <= start:
+        raise ValueError('invalid message: cannot find ending "}" for message')
+
+    # 假设 payload 是最后一个字段：把二进制段替换成 null，让 JSON 头部可被解析
+    sanitized = raw_payload[:start] + b'null' + raw_payload[end:]
+    head_obj = json.loads(sanitized.decode('utf-8'))
+
+    bin_payload = raw_payload[start:end].rstrip(b' \t\r\n')
+    head_obj['payload'] = bin_payload
+    head_obj['payload_b64'] = base64.b64encode(bin_payload).decode('ascii')
+    return head_obj
 
 
 class MQTTChannel(object):
