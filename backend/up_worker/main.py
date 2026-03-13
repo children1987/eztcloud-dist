@@ -105,7 +105,7 @@ def get_device_is_online(online_cfg, msg):
     return is_online
 
 
-def run(msg: dict):
+def run(msg):
     """
     :param msg: 从上行队列中拿出来的原始数据
     :return:

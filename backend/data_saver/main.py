@@ -21,7 +21,7 @@ class SaveDataUtils(object):
     """
 
     @staticmethod
-    def get_sprint_str(o_str: str):
+    def get_sprint_str(o_str):
         """
         获取可打印的字符串
         :param o_str: 原字符串
@@ -30,7 +30,7 @@ class SaveDataUtils(object):
         return json.dumps(o_str)
 
     @classmethod
-    def format_for_saving(cls, attrs: dict):
+    def format_for_saving(cls, attrs):
         """
         格式化数据，将数据转换为InfluxDB的格式
         :param attrs: 需要格式化的数据，样例：

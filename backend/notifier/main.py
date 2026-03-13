@@ -164,7 +164,7 @@ class Notifier(object):
             logger.info(f"topic: {topic}, payload: {payload}")
 
     @classmethod
-    def _site_msg(cls, aims: list, template_key, params: list, **kwargs):
+    def _site_msg(cls, aims, template_key, params, **kwargs):
         """
         以站内信的形式发送通知
         Args:
@@ -188,7 +188,7 @@ class Notifier(object):
         if msgs:
             NotifyRecordUser.objects.bulk_create(msgs)
 
-    def notify(self, msg: dict):
+    def notify(self, msg):
         """
         向用户发送通知
         """

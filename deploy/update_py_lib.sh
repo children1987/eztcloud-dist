@@ -8,9 +8,9 @@ read URL
 
 
 if [ -n "$URL" ]; then
-    install_command="pip install $choice -i $URL"
+    install_command="pip install -U $choice -i $URL"
 else
-    install_command="pip install $choice -i https://pypi.doubanio.com/simple/"
+    install_command="pip install -U $choice -i https://pypi.doubanio.com/simple/"
 fi
 
 

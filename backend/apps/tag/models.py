@@ -26,7 +26,7 @@ class Tag(models.Model):
         verbose_name_plural = verbose_name
 
     @classmethod
-    def add_tags(cls, project_key: str, tags):
+    def add_tags(cls, project_key, tags):
         """
         批量添加tag
         :param project_key: str, 项目的key

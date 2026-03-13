@@ -35,7 +35,7 @@ def purge_existing_down_tasks():
         redis_unexpired_db.unlink(*res[1])
 
 
-def parse_msg(msg: dict):
+def parse_msg(msg):
     """
     作为回调函数 解析 mqtt的消息
     """

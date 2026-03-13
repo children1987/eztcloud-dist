@@ -71,7 +71,7 @@ class DeviceServer(protocol.Protocol):
         self._up_mq = MqFactory().get_mq('up')
         self._tcp_redis_db= redis.Redis(connection_pool=tcp_pool)
 
-    def _check_license_and_disconnect(self, device: str, device_info: dict):
+    def _check_license_and_disconnect(self, device, device_info):
         """
         检查项目授权状态，若已过期则直接断开当前TCP连接，不更新设备状态，避免产生"上线"记录。
 
@@ -347,7 +347,7 @@ def send_message_to_device(device_username):
         redis_unexpired.unlink(f'is_processing_tcp:{device_username}')
 
 
-def parse_msg(msg: dict):
+def parse_msg(msg):
     """
     tcp 下发消息回调函数
     :param msg:

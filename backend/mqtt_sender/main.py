@@ -53,7 +53,7 @@ def get_mqtt_sender_publish_client(link_params=None):
         )
 
 
-def parse_mq_msg(msg: dict):
+def parse_mq_msg(msg):
     """
     mqtt_sender mq 的回调函数
     Args:
