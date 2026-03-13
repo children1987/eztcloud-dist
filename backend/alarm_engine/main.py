@@ -5,8 +5,6 @@ import uuid
 import _add_sys_path
 import backend.m_common.set_timezone
 
-from paho.mqtt.client import MQTTMessage
-
 import backend._setup_django
 
 from backend.alarm_engine.assist_tool import AssistTool
@@ -26,7 +24,7 @@ class MQTTReceiver(MQTTClient):
     """
 
     @staticmethod
-    def _process(message: MQTTMessage):
+    def _process(message):
         """
         {
             "id": 7,
@@ -205,7 +203,7 @@ class MQTTReceiver(MQTTClient):
                 alarm_logger.info(f'device_username: {device_username} alarm_id: {alarm_id} failed ')
 
     @staticmethod
-    def _parse_device_disconnect(message: MQTTMessage):
+    def _parse_device_disconnect(message):
         """
         设备离线 告警检测
         :param message:
@@ -237,7 +235,7 @@ class MQTTReceiver(MQTTClient):
                 alarm_logger.error(traceback.format_exc())
 
     @staticmethod
-    def _parse_device_connect(message: MQTTMessage):
+    def _parse_device_connect(message):
         """
         设备上线 告警恢复检测
         :param message:

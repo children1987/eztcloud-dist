@@ -114,7 +114,7 @@ class Notifier(object):
         logger.debug(f"ding_robot message_status: {res}")
 
     @classmethod
-    def _ding_work(cls, aims, template_key, params: list, **kwargs):
+    def _ding_work(cls, aims, template_key, params, **kwargs):
         title_params = kwargs['title_params']
         ding_work_template = NOTIFY_TEMPLATE[template_key]['template']['ding_work']
         msg_body = {
@@ -131,7 +131,7 @@ class Notifier(object):
         logger.debug(res)
 
     @classmethod
-    def _wechat(cls, aims: list, template_key, params: list, **kwargs):
+    def _wechat(cls, aims, template_key, params, **kwargs):
         wx_info = kwargs['wx_info']
         wx_template = deepcopy(NOTIFY_TEMPLATE[template_key]["template"]['wechat'])
         wx_template['data'] = json.loads(wx_template['data'].format(*params))
@@ -147,7 +147,7 @@ class Notifier(object):
             logger.info(res)
 
     @classmethod
-    def _mqtt(cls, aims, template_key, params: list, **kwargs):
+    def _mqtt(cls, aims, template_key, params, **kwargs):
         """
         Args:
             aims: ["topic",]

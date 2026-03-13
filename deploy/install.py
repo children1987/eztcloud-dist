@@ -16,6 +16,7 @@ deploy_all.py 亦会复用该文件，因此本脚本统一对其进行读写。
 import argparse
 import json
 import os
+import re
 import secrets
 import shutil
 import subprocess
@@ -235,6 +236,18 @@ class IswInstaller:
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dest)
         print(f"✓ 已复制 IAM 公钥到 {dest}")
+
+    def _sync_mobile_nginx_conf(self):
+        """同步移动端 nginx 配置到 /workspace/nginx/projects。"""
+        source = DEPLOY_DIR / "nginx" / "isw_v2_local_mobile_nginx.conf"
+        if not source.exists():
+            print(f"未找到移动端 nginx 配置: {source}，跳过复制。")
+            return
+        target_dir = WORKSPACE / "nginx" / "projects"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target = target_dir / source.name
+        shutil.copy2(source, target)
+        print(f"已同步移动端 nginx 配置到: {target}")
 
     def _wait_for_container(self, name, timeout=180):
         print(f"等待容器 {name} 启动...")
@@ -556,6 +569,21 @@ class IswInstaller:
         else:
             print("⚠️ 未找到可写入的 MQTT 用户凭证，可能 install_emqx.py 尚未生成 internal_users。")
 
+    def _append_cors_allowed_origin_regexes(self):
+        if not self.args.ip:
+            print("未设置目标 IP，跳过写入 CORS_ALLOWED_ORIGIN_REGEXES。")
+            return
+        pattern = rf"^http://{re.escape(self.args.ip)}:\\d+$"
+        line = f"CORS_ALLOWED_ORIGIN_REGEXES={pattern}"
+        self._ensure_backend_env()
+        content = BACKEND_ENV.read_text(encoding="utf-8")
+        if line in content:
+            print(".env 已包含 CORS_ALLOWED_ORIGIN_REGEXES，跳过追加。")
+            return
+        content = content.rstrip() + "\n" + line + "\n"
+        BACKEND_ENV.write_text(content, encoding="utf-8")
+        print(f"已写入 {BACKEND_ENV}: {line}")
+
     def _sync_emqx_api_credentials(self):
         emqx = self.credentials.get("emqx", {})
         api_key = emqx.get("api_key")
@@ -697,6 +725,8 @@ class IswInstaller:
         self._sync_basic_env()
         # 写入系统用户环境变量
         self._sync_system_users_env()
+        # 补充 CORS 允许来源正则
+        self._append_cors_allowed_origin_regexes()
 
         print("\n=== 阶段 4：初始化 EMQX 账号与 MQTT 用户（预检查） ===")
         # 确保 deploy_credentials.json 中有 internal_users（如果不存在则提前生成）
@@ -708,6 +738,8 @@ class IswInstaller:
         self._sync_emqx_api_credentials()
         # 复制 IAM 公钥，确保 docker-compose build 前后端可获取最新公钥
         self._copy_public_key()
+        # 同步移动端 nginx 配置到 /workspace/nginx/projects
+        self._sync_mobile_nginx_conf()
         # 把已经补全的 backend/.env 同步到 deploy/.env，供 docker-compose 使用
         self._copy_env_to_deploy()
 

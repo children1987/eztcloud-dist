@@ -57,6 +57,13 @@ class Domain(models.Model):
         null=True,
         blank=True,
     )
+    we_svc_name = models.CharField(
+        verbose_name='微信服务号 名称',
+        max_length=50,
+        default=None,
+        null=True,
+        blank=True,
+    )
     we_svc_alarm_tpl_id = models.CharField(
         verbose_name='告警消息模板ID',
         max_length=50,
@@ -162,7 +169,7 @@ class ClientDomain(models.Model):
     )
     name = models.CharField(
         verbose_name='名称',
-        help_text='前端域名:端口号 或 前端域名',
+        help_text='前端域名(或IP)，不含端口号',
         max_length=200,
         unique=True
     )
