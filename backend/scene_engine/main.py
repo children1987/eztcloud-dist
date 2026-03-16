@@ -1,5 +1,6 @@
 import sys
 import time
+import json
 import traceback
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
@@ -15,7 +16,7 @@ if str(PROJ_ROOT) not in sys.path:
 import backend._setup_django
 # 切记：main中关于django models的引包需要放到该注释的下面
 import backend.m_common.set_timezone
-
+from multiprocessing import Process
 from django.conf import settings
 from django_celery_beat.models import PeriodicTask
 from backend.m_common.mqtt_client import MQTTClient
@@ -139,51 +140,40 @@ class SceneEngineServe(object):
         """
         return SceneManager.get_redis_conn(redis_db)
 
+
     @staticmethod
-    def set_redis_data():
+    def init_scene_data():
         """
-        设置 redis 缓存数据
+        读取mysql初始化场景数据
         :return:
         """
         scene_qs = SceneConfig.objects.filter(
             is_active=True,
             is_deleted=False,
             project__isnull=False,
-        ).all()
-        ret = SceneDataSerializer(scene_qs, many=True).data
-        for scene_data in ret:
+        )
+        redis_conn = SceneManager.get_redis_conn(SCENE_DB)
+        for scene_obj in scene_qs:
+            scene_id = scene_obj.pk
+            key = f'scene_{scene_id}'
+            if redis_conn.exists(key):
+                continue
+            scene_data = SceneTimingSerializer(scene_obj).data
             SceneManager.set_scene_redis(scene_data)
 
-    @staticmethod
-    def start_timing_task():
-        """
-        开启 定时任务
-        :return:
-        """
-        scene_qs = SceneConfig.objects.filter(
-            trigger_type__contains='timing',
-            is_active=True,
-            is_deleted=False
-        ).all()
-        ret = SceneTimingSerializer(scene_qs, many=True).data
-        for scene_data in ret:
-            SceneManager.on_timing_scene(scene_data)
 
-    def read_scene_data(self):
-        """
-         读取 mysql 中开启的场景数据 并且初始化
-        :return:
-        """
-        self.set_redis_data()
-        # self.start_timing_task()
-
-    def run(self):
+    @rerun(default_rerun_message='SceneEngine服务重启中', timeout=5, logger=logger)
+    def run(self, *args, **kwargs):
         # 启动 mqtt server
         self.start_receiver_server()
 
-@rerun(default_rerun_message='SceneEngine服务重启中', timeout=5,  logger=logger)
+
 def main():
-    SceneEngineServe().run()
+    # 1 读取 mysql 中 所有场景数据 缓存到数据库中
+    scene_manage = SceneEngineServe()
+    receiver_server = Process(target=scene_manage.init_scene_data)
+    receiver_server.start()
+    scene_manage.run()
 
 
 if __name__ == '__main__':
