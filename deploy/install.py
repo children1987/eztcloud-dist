@@ -488,6 +488,8 @@ class IswInstaller:
             "SMS_ID_ALARM_ONGOING": env_map.get("SMS_ID_ALARM_ONGOING", "2502959"),
             # 前端目录
             "FRONTEND_DIR_NAME": env_map.get("FRONTEND_DIR_NAME", "frontend_dist_local"),
+            # 任务周期定时最小间隔分钟数
+            "TASK_MIN_INTERVAL_MINUTES": env_map.get("TASK_MIN_INTERVAL_MINUTES", 1),
         }
         self._update_env_file(updates)
 

@@ -99,8 +99,8 @@ def _parse_incoming_mqtt_payload_to_dict(raw_payload):
     # 1) 标准 JSON：直接解析即可
     try:
         return json.loads(raw_payload)
-    except UnicodeDecodeError:
-        # 2) 兼容 payload 内混入二进制导致 utf-8 decode 失败
+    except:
+        # 2) 兼容 payload 非标准json
         pass
 
     key = b'"payload"'

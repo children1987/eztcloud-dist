@@ -566,14 +566,6 @@
             "markers": "python_version >= '3.7'",
             "version": "==3.4.5"
         },
-        "chinesecalendar": {
-            "hashes": [
-                "sha256:1b85d920ffee8e19a98a2a27a699a99f39ca224b3b1096aa574384d3837f5492",
-                "sha256:9479ead6010e6001472efdf97317699882c16604c7858ba26862dc9d36d56d46"
-            ],
-            "index": "pypi",
-            "version": "==1.11.0"
-        },
         "click": {
             "hashes": [
                 "sha256:12ff4785d337a1bb490bb7e9c2b1ee5da3112e94a8622f26a6c77f5d2fc6842a",

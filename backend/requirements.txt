@@ -31,7 +31,6 @@ paho-mqtt==1.5.1
 # 如果直接安装失败，请运行: uv pip install --no-binary django-celery-beat django-celery-beat==2.5.0
 django-celery-beat==2.5.0
 drf-spectacular==0.27.0
-chinesecalendar==*
 requests==2.32.3
 django-utils-six==2.0
 influxdb-client==1.40.0
