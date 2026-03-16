@@ -43,13 +43,19 @@ class TaskEngineServe(object):
             is_active=True,
             is_deleted=False
         ).all()
-        ret = TaskManagerSerializer(scene_qs, many=True).data
         redis_conn = TaskDataManage.get_redis_conn(TASK_DB)
-        for task_data in ret:
-            task_id = task_data['id']
+        for task_obj in scene_qs:
+            task_id = task_obj.pk
             key = f'task_{task_id}'
-            if redis_conn.exists(key):
+            if task_obj.timing_type == 'repeat':
+                filter_info = {'name__contains': f'task_{task_id}_'}
+            else:
+                filter_info = {'name': key}
+            if PeriodicTask.objects.filter(
+                **filter_info
+            ).exists():
                 continue
+            task_data = TaskManagerSerializer(task_obj).data
             redis_conn.set(f'task_{task_id}', value=json.dumps(task_data))
             TaskDataManage.start_task(task_data)
         logger.info("TaskEngine服务 初始完成！")
