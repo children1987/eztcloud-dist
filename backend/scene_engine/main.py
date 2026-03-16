@@ -156,10 +156,22 @@ class SceneEngineServe(object):
         for scene_obj in scene_qs:
             scene_id = scene_obj.pk
             key = f'scene_{scene_id}'
-            if redis_conn.exists(key):
+            scene_data = redis_conn.get(key)
+            if not scene_data:
+                scene_data = SceneTimingSerializer(scene_obj).data
+                SceneManager.set_scene_redis(scene_data)
                 continue
-            scene_data = SceneTimingSerializer(scene_obj).data
-            SceneManager.set_scene_redis(scene_data)
+            scene_data = json.loads(scene_data)
+            trigger_type = scene_data.get('trigger_type')
+            if trigger_type and 'timing' in trigger_type:
+                pt_qs = PeriodicTask.objects.filter(
+                    # 精确匹配当前场景的定时任务
+                    name__startswith=f'scene_{scene_id}_',
+                    task='scene_timing_task'
+                )
+                if not pt_qs.exists():
+                    # 重新开启吴删除的场景
+                    SceneManager.set_scene_redis(scene_data)
 
 
     @rerun(default_rerun_message='SceneEngine服务重启中', timeout=5, logger=logger)
