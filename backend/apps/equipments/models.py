@@ -426,16 +426,6 @@ class DeviceCategory(models.Model):
         null=True,
         blank=True,
     )
-    f_product = models.ForeignKey(
-        FixedProduct,
-        verbose_name='产品类型',
-        related_name='fixed_product_categorise',
-        on_delete=models.SET_NULL,
-        help_text='当产品类型quote_product为产品类型（P）时，必传',
-        max_length=20,
-        null=True,
-        blank=True,
-    )
     source_fixed_product = models.ForeignKey(
         FixedProduct,
         verbose_name='来源公共产品',
