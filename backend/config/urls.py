@@ -25,6 +25,7 @@ from backend.apps.areas.views import AreasViewSet, WeatherViewSet
 from backend.apps.alarms.views import AlarmNoticeGroupViewSet, AlarmDeviceViewSet, \
     AlarmViewSet, AlarmLogViewSet
 from backend.apps.common.emqx_webhook.views import EmqxWebhookView
+from backend.apps.common.views import BackendVersionView
 from backend.apps.control_panels.views import ControlPanelViewSet, ControlPanelButtonViewSet
 from backend.apps.custom_servers.views import DomainView
 from backend.apps.camera.views import EzvizConfigViewSet, CameraChannelViewSet, CameraAlarmViewSet, \
@@ -166,6 +167,7 @@ urlpatterns = [
     path('api/system/license/', SystemLicenseView.as_view(), name='system-license'),  # 待废弃
     path('api/system/module_trim/', ModuleTrimView.as_view(), name='system-module-trim'),  # 待废弃
     path('api/system/public_configs/', SystemPublicConfigsView.as_view(), name='system-public-configs'),
+    path('api/system/backend_version/', BackendVersionView.as_view(), name='system-backend-version'),
     path('i18n/', include('django.conf.urls.i18n')),
 
     # iam
