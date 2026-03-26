@@ -72,11 +72,6 @@ def parse_mq_msg(msg):
         # msg.update(qos=qos, properties=properties)
 
     ret = mqtt_pub_client.publish(**msg)
-    # mqtt_sender_logger.info(f'is_published: {(is_published := ret.is_published())}')
-    # if not is_published:
-    #     mqtt_sender_logger.info(f"waiting for publish...")
-    #     ret.wait_for_publish()
-    #     mqtt_sender_logger.info(f"is_published: {ret.is_published()}")
 
 
 @rerun(default_rerun_message="mqtt_sender is restarting", logger=mqtt_sender_logger)

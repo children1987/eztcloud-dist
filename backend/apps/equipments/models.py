@@ -190,18 +190,6 @@ class FixedProduct(models.Model):
         null=True,
         blank=True,
     )
-    is_published = models.BooleanField(
-        verbose_name='是否已发布',
-        help_text='是否已发布',
-        default=True
-    )
-    publish_state = models.CharField(
-        verbose_name='发布状态',
-        help_text='发布状态',
-        max_length=20,
-        choices=PUBLISH_STATE_,
-        default='published'
-    )
     creator = models.ForeignKey(
         User,
         verbose_name='创建人',
