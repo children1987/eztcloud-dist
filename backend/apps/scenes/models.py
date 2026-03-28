@@ -40,7 +40,7 @@ class SceneConfig(BaseModel):
         default=True,
         help_text='是否因授权过期而被关停。True=正常，False=因授权过期被关停。实际执行状态 = is_active AND enabled'
     )
-    # 场景 生效时间{一次、每天、week } - 触发条件  json{定时、温度、湿度、PM2.5、日出日落}
+    # 场景 生效时段{一次、每天、week } - 触发条件  json{定时、温度、湿度、PM2.5、日出日落}
     cfg_info = models.JSONField(
         verbose_name='场景配置详情',
         help_text='场景配置详情',

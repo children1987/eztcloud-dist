@@ -346,12 +346,6 @@ class DeviceCategory(models.Model):
         choices=DEVICE_NODE_TYPE,
         max_length=20,
     )
-    version = models.CharField(
-        verbose_name='版本号',
-        help_text='版本号',
-        max_length=10,
-        default='v1'
-    )
     access_protocol = models.CharField(
         verbose_name='设备接入协议',
         help_text='设备接入协议',
