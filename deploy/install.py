@@ -90,11 +90,36 @@ MQTT_CLIENT_ID_ENV = {
 
 # 系统用户配置：用户名 -> (环境变量用户名键, 环境变量密码键)
 SYSTEM_USERS_CONFIG = [
-    ("SU_device_shadow", "DEVICE_SHADOW_API_USER", "DEVICE_SHADOW_API_TOKEN"),
-    ("SU_alarm_engine", "ALARM_ENGINE_API_USER", "ALARM_ENGINE_API_TOKEN"),
-    ("SU_rule_engine", "RULE_ENGINE_API_USER", "RULE_ENGINE_API_TOKEN"),
-    ("SU_tcp_server", "TCP_SERVER_API_USER", "TCP_SERVER_API_TOKEN"),
-    ("SU_mcq", "SU_MCQ_API_USER", "SU_MCQ_API_TOKEN"),
+    {
+        'username': "SU_device_shadow",
+        'user_env_key': "DEVICE_SHADOW_API_USER",
+        'token_env_key': "DEVICE_SHADOW_API_TOKEN",
+        'write_to_isw_env': True,
+    },
+    {
+        'username': "SU_alarm_engine",
+        'user_env_key': "ALARM_ENGINE_API_USER",
+        'token_env_key': "ALARM_ENGINE_API_TOKEN",
+        'write_to_isw_env': True,
+    },
+    {
+        'username': "SU_rule_engine",
+        'user_env_key': "RULE_ENGINE_API_USER",
+        'token_env_key': "RULE_ENGINE_API_TOKEN",
+        'write_to_isw_env': True,
+    },
+    {
+        'username': "SU_tcp_server",
+        'user_env_key': "TCP_SERVER_API_USER",
+        'token_env_key': "TCP_SERVER_API_TOKEN",
+        'write_to_isw_env': True,
+    },
+    {
+        'username': "SU_mcq",
+        'user_env_key': "ISW_API_USER",
+        'token_env_key': "ISW_API_TOKEN",
+        'write_to_isw_env': False,
+    },
 ]
 
 
@@ -354,7 +379,8 @@ class IswInstaller:
         changed = False
         system_users_section = self.credentials.setdefault("system_users", {})
         
-        for username, user_env_key, token_env_key in SYSTEM_USERS_CONFIG:
+        for user_config in SYSTEM_USERS_CONFIG:
+            username = user_config['username']
             # 如果凭证文件中已有该用户的密码，则保留；否则生成新密码和 token
             if username not in system_users_section:
                 system_users_section[username] = {
@@ -503,7 +529,16 @@ class IswInstaller:
             return
         
         updates = {}
-        for username, user_env_key, token_env_key in SYSTEM_USERS_CONFIG:
+        for user_config in SYSTEM_USERS_CONFIG:
+            username = user_config['username']
+            user_env_key = user_config['user_env_key']
+            token_env_key = user_config['token_env_key']
+            write_to_isw_env = user_config['write_to_isw_env']
+
+            # 如果不需要写入isw的.env文件，则跳过
+            if not write_to_isw_env:
+                continue
+
             user_info = system_users.get(username, {})
             user_value = user_info.get("username", username)
             password = user_info.get("password")
@@ -779,7 +814,8 @@ class IswInstaller:
         print("\n=== 阶段 7：初始化系统用户数据 ===")
         # 准备系统用户凭证 JSON，传递给 initsysusers 命令
         system_users = self.credentials.get("system_users", {})
-        for username, user_env_key, token_env_key in SYSTEM_USERS_CONFIG:
+        for user_config in SYSTEM_USERS_CONFIG:
+            username = user_config['username']
             user_info = system_users.get(username, {})
             if not user_info:
                 err_msg = f"ERROR: 系统用户 {username} 没有凭证，请检查 deploy_credentials.json 的 system_users 配置。"
