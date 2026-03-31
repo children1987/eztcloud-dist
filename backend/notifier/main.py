@@ -136,7 +136,7 @@ class Notifier(object):
         wx_template = deepcopy(NOTIFY_TEMPLATE[template_key]["template"]['wechat'])
         wx_template['data'] = json.loads(wx_template['data'].format(*params))
         wx_template['template_id'] = wx_info['tpl_id']
-        logger.info(wx_template)
+        logger.info(f'aims: {aims} wx_template: {wx_template}')
         wechat_account = WechatPublicAccount(
             wx_info['app_id'],
             wx_info['app_secret']

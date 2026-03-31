@@ -350,19 +350,21 @@ class IswInstaller:
             raise InstallError(f"同步用户时发生错误: {str(e)}")
 
     def _ensure_system_users_credentials(self):
-        """生成并保存系统用户密码到 deploy_credentials.json"""
+        """生成并保存系统用户密码和 token 到 deploy_credentials.json"""
         changed = False
         system_users_section = self.credentials.setdefault("system_users", {})
         
         for username, user_env_key, token_env_key in SYSTEM_USERS_CONFIG:
-            # 如果凭证文件中已有该用户的密码，则保留；否则生成新密码
+            # 如果凭证文件中已有该用户的密码，则保留；否则生成新密码和 token
             if username not in system_users_section:
                 system_users_section[username] = {
                     "username": username,
                     "password": generate_password(32),
+                    "token": generate_password(32),
                 }
                 changed = True
-                print(f"✓ 已为系统用户 {username} 生成密码")
+                print(f"✓ 已为系统用户 {username} 生成密码和 token")
+
         
         if changed:
             self._save_credentials()
@@ -505,12 +507,13 @@ class IswInstaller:
             user_info = system_users.get(username, {})
             user_value = user_info.get("username", username)
             password = user_info.get("password")
+            token = user_info.get("token")
             
-            if password:
+            if password and token:
                 updates[user_env_key] = user_value
-                updates[token_env_key] = password
+                updates[token_env_key] = token
             else:
-                print(f"⚠️ 系统用户 {username} 缺少密码，跳过写入环境变量。")
+                print(f"⚠️ 系统用户 {username} 缺少密码或 token，跳过写入环境变量。")
         
         if updates:
             self._update_env_file(updates)
@@ -773,25 +776,30 @@ class IswInstaller:
         # 更新 deploy/.env（因为可能新增了 MQTT 用户环境变量）
         self._copy_env_to_deploy()
 
-        print("\n=== 阶段 7：初始化 Django 数据 ===")
+        print("\n=== 阶段 7：初始化系统用户数据 ===")
         # 准备系统用户凭证 JSON，传递给 initsysusers 命令
         system_users = self.credentials.get("system_users", {})
-        credentials_json = {}
         for username, user_env_key, token_env_key in SYSTEM_USERS_CONFIG:
             user_info = system_users.get(username, {})
-            user_value = user_info.get("username", username)
+            if not user_info:
+                err_msg = f"ERROR: 系统用户 {username} 没有凭证，请检查 deploy_credentials.json 的 system_users 配置。"
+                print(err_msg)
+                raise InstallError(err_msg)
             password = user_info.get("password")
-            if user_value and password:
-                credentials_json[user_value] = password
-        
-        if credentials_json:
-            # 将凭证作为 JSON 字符串传递给命令
-            credentials_str = json.dumps(credentials_json)
-            self._run_manage("initsysusers", "--credentials-json", credentials_str, check=False)
-        else:
-            # 如果没有凭证，仍然尝试从环境变量读取
-            self._run_manage("initsysusers", check=False)
-        
+            if not password:
+                err_msg = f"ERROR: 系统用户 {username} 没有 password，请检查 deploy_credentials.json 的 system_users 配置。"
+                print(err_msg)
+                raise InstallError(err_msg)
+            token = user_info.get("token")
+            if not token:
+                err_msg = f"ERROR: 系统用户 {username} 没有 token，请检查 deploy_credentials.json 的 system_users 配置"
+                print(err_msg)
+                raise InstallError(err_msg)
+
+        # 将凭证作为 JSON 字符串传递给命令
+        credentials_str = json.dumps(system_users)
+        self._run_manage("initsysusers", "--credentials-json", credentials_str, check=False)
+
         print("\n=== 阶段 7.5：从 IAM 同步 admin 用户 ===")
         self._sync_admin_from_iam()
         
