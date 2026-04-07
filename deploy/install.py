@@ -877,7 +877,7 @@ class IswInstaller:
 
         def _clone(branch):
             print(f"克隆公共产品仓库... (branch={branch})")
-            url = "https://gitee.com/children1987/eztcloud-public-product.git"
+            url = "https://hongtanzhineng:cad321168656fdf0fd24490c7378de05@gitee.com/children1987/eztcloud-public-product.git"
             self._run(
                 ["git", "clone", "--depth=1", "--branch", branch, url, str(repo_dir)],
                 timeout=120,
