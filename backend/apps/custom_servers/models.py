@@ -106,13 +106,6 @@ class Domain(models.Model):
         null=True,
         blank=True,
     )
-    mobile = models.CharField(
-        verbose_name='移动端域名',
-        max_length=200,
-        default=None,
-        null=True,
-        blank=True,
-    )
     we_mch_id = models.CharField(
         verbose_name='微信商户号ID',
         help_text='微信商户号ID',
@@ -174,7 +167,8 @@ class ClientDomain(models.Model):
         unique=True
     )
     mobile = models.CharField(
-        verbose_name='移动端域名',
+        verbose_name='移动端URL',
+        help_text='例如：https://m.xxx.com:444/',
         max_length=200,
         default=None,
         null=True,

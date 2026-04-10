@@ -125,7 +125,7 @@ class DeviceServer(protocol.Protocol):
                 self._state_machine.set_state('disconnect')
                 return
 
-        tcp_server_logger.info(f'reg_frame: {reg_frame}')
+        tcp_server_logger.debug(f'reg_frame: {reg_frame}')
         # 强制刷新日志，确保连接记录立即写入文件（用于调试）
         for handler in tcp_server_logger.handlers:
             handler.flush()
@@ -372,7 +372,7 @@ def process_messages_from_queue():
     下发消息任务
     :return:
     """
-    tcp_server_logger.info('tcp_down_mq.wait_msg_blocked start')
+    tcp_server_logger.debug('tcp_down_mq.wait_msg_blocked start')
     tcp_down_mq.wait_msg_blocked()
 
 
