@@ -501,8 +501,6 @@ class IswInstaller:
                 "ezviz.camera.common.4",
             ),
             # 微信配置（固定默认值，可在 .env 中覆盖）
-            "WECHAT_APPID": env_map.get("WECHAT_APPID", "wxxxx"),
-            "WECHAT_APPSECRET": env_map.get("WECHAT_APPSECRET", "xxx"),
             "WECHAT_TOKEN": env_map.get("WECHAT_TOKEN", "xxx"),
             "WECHAT_CALLBACK_KEY": env_map.get("WECHAT_CALLBACK_KEY", "isw"),
             # 短信配置（固定默认值，可在 .env 中覆盖）
