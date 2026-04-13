@@ -215,7 +215,11 @@ def run(msg):
 
 def main():
     mq_interface = MqFactory().get_mq('up', callback=run)
-    mq_interface.wait_msg_blocked(concurrency=4, multi_process=True, interval_time=0.01)
+    mq_interface.wait_msg_blocked(
+        concurrency=4,
+        multi_process=True,
+        interval_time=0.01
+    )
 
 
 if __name__ == '__main__':
