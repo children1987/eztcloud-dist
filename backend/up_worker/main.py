@@ -60,6 +60,8 @@ def update_msg_info(msg, username, device_info):
     """
     project_id = device_info['project']
     project_info = DBGetDataHandler().get_project(project_id)
+    if not project_info:
+        project_info = device_info['category']['project']
     info = {
         'project_id': project_id,   # 弃用，之后需要project数据直接从project字段取
         'project_name': project_info.get('name', project_id),  # 弃用，之后需要project数据直接从project字段取
