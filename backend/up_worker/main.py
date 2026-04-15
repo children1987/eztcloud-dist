@@ -11,7 +11,6 @@
 import json
 import time
 import traceback
-
 import _setup_backend
 import backend._setup_django
 import backend.m_common.set_timezone
@@ -19,6 +18,7 @@ from backend.m_common.mq_factory import MqFactory
 from backend.m_common.mqtt_pub_client_factory import MQTTPublishClientFactory, \
     PublishClientNames, InternalPublishClientParams
 from backend.m_common.custom_logger import WATCH_LOG_LEVEL
+from backend.m_common.db_data_handler import DBGetDataHandler
 from backend.rule_engine.biz.tools import save_msg_log
 from backend.up_worker.config import up_worker_logger
 from backend.device_shadow.device_shadow import DeviceShadow
@@ -59,7 +59,7 @@ def update_msg_info(msg, username, device_info):
     :return:
     """
     project_id = device_info['project']
-    project_info = device_info['category']['project']
+    project_info = DBGetDataHandler().get_project(project_id)
     info = {
         'project_id': project_id,   # 弃用，之后需要project数据直接从project字段取
         'project_name': project_info.get('name', project_id),  # 弃用，之后需要project数据直接从project字段取
