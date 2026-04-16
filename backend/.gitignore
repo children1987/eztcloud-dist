@@ -3,6 +3,7 @@
 __pycache__/
 *.pyc
 .idea/
+medie/
 .env
 *.log
 *.log.*
