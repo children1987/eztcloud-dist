@@ -19,3 +19,6 @@ env/
 /mqtt_broker/emqx/emqx.conf
 /mqtt_broker/emqx/acl.conf
 influxdb/
+/backend/apps/utils/auth_code/dist
+*.spec
+/backend/apps/utils/auth_code/build
