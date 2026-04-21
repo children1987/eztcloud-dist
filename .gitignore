@@ -22,3 +22,4 @@ influxdb/
 /backend/apps/utils/auth_code/dist
 *.spec
 /backend/apps/utils/auth_code/build
+.cursor/

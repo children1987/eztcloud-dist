@@ -734,6 +734,11 @@ class IswInstaller:
             cwd=DEPLOY_DIR,
         )
         self._reload_credentials()
+    
+    def _init_areas_city(self):
+        result = self._run_manage("initareascity", capture=True, check=False)
+        if isinstance(result, str) and result.strip():
+            print(result.strip())
 
     # ------------------------------------------------------------------ pipeline
     def run(self):
@@ -832,7 +837,6 @@ class IswInstaller:
         # 将凭证作为 JSON 字符串传递给命令
         credentials_str = json.dumps(system_users)
         self._run_manage("initsysusers", "--credentials-json", credentials_str, check=False)
-
         print("\n=== 阶段 7.5：从 IAM 同步 admin 用户 ===")
         self._sync_admin_from_iam()
         
@@ -846,6 +850,9 @@ class IswInstaller:
         self._print_summary()
         print("\n=== 阶段 9：导入最新公共产品（gitee） ===")
         self._import_public_products()
+
+        print("\n=== 阶段 10：初始化行政区域数据(apps/scripts/init_data/tb_areas.json) ===")
+        self._init_areas_city()
 
     def _print_summary(self):
         admin = self.credentials.get("iam_admin", {})
