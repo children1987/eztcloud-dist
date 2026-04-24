@@ -1,6 +1,6 @@
 import time
 from concurrent.futures import ThreadPoolExecutor
-
+import datetime
 import _setup_backend
 import backend._setup_django
 import backend.m_common.set_timezone
@@ -32,7 +32,9 @@ def task2():
     checker.run()
 
 
+
+
 if __name__ == '__main__':
-    with ThreadPoolExecutor(max_workers=2) as pool:
+    with ThreadPoolExecutor(max_workers=3) as pool:
         pool.submit(task1)
         pool.submit(task2)

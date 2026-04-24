@@ -1,15 +1,15 @@
-from django.contrib.auth import get_user_model
 from django.db import models
 
 from backend.apps.custom_servers.models import Domain
 
-User = get_user_model()
+# 注意：使用字符串引用避免循环依赖
+# users 导入 wechat，所以这里不能直接导入 User，使用字符串引用 'users.User'
 
 
 class WechatUser(models.Model):
 
     user = models.ForeignKey(
-        User,
+        'users.User',  # 使用字符串引用避免循环依赖
         on_delete=models.CASCADE
     )
 
@@ -46,7 +46,7 @@ class WechatUser(models.Model):
 class WeappUser(models.Model):
 
     user = models.ForeignKey(
-        User,
+        'users.User',  # 使用字符串引用避免循环依赖
         on_delete=models.CASCADE
     )
 

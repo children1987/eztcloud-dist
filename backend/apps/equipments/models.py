@@ -381,14 +381,14 @@ class DeviceCategory(models.Model):
         blank=True,
     )
     scene_action = models.BooleanField(
-        verbose_name='是否参与场景动作',
-        help_text="是否参与场景动作",
-        default=False,
+        verbose_name='属性可作为智能场景执行动作',
+        help_text="开启后，该设备类型的属性可作为智能场景的执行动作。",
+        default=True,
     )
     scene_condition = models.BooleanField(
-        verbose_name='是否参与场景条件',
-        help_text="是否参与场景条件",
-        default=False,
+        verbose_name='属性可作为智能场景触发器',
+        help_text="开启后，该设备类型的属性可作为智能场景的触发器。",
+        default=True,
     )
     online_delay_time = models.IntegerField(
         verbose_name='设备在线延迟时间',
@@ -1209,6 +1209,12 @@ class Device(BaseModel):
         verbose_name='设备调试消息日志按钮',
         help_text='设备调试消息日志按钮',
         default=False,
+    )
+    record_auto_close_time = models.DateTimeField(
+        verbose_name='消息日志自动关闭时间',
+        help_text='开启消息日志后自动关闭时间',
+        null=True,
+        blank=True,
     )
 
     class Meta:
