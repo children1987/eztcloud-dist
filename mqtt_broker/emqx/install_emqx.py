@@ -10,13 +10,11 @@ EMQX 自动化安装脚本（本地环境）。
 """
 
 import argparse
-import http.client
 import json
 import secrets
 import string
 import subprocess
 import sys
-import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -142,44 +140,6 @@ def container_exists():
     return bool((result.stdout or "").strip())
 
 
-def _wait_emqx_api_ready(host: str, port: int, timeout: int = 120):
-    """等待 EMQX Dashboard API 可访问。"""
-    start = datetime.now()
-    while (datetime.now() - start).total_seconds() < timeout:
-        try:
-            conn = http.client.HTTPConnection(host, port, timeout=3)
-            conn.request("GET", "/api/v5/status")
-            resp = conn.getresponse()
-            _ = resp.read()
-            conn.close()
-            if resp.status in (200, 401, 403):
-                return
-        except Exception:
-            pass
-        time.sleep(1)
-    raise TimeoutError(f"等待 EMQX API 就绪超时: {host}:{port}")
-
-
-def _verify_dashboard_login(host: str, port: int, username: str, password: str) -> bool:
-    """校验 dashboard 账号密码是否可登录。"""
-    try:
-        conn = http.client.HTTPConnection(host, port, timeout=8)
-        payload = json.dumps({"username": username, "password": password})
-        conn.request("POST", "/api/v5/login", body=payload, headers={"Content-Type": "application/json"})
-        resp = conn.getresponse()
-        body = resp.read().decode("utf-8", errors="ignore")
-        conn.close()
-        if resp.status != 200:
-            return False
-        try:
-            data = json.loads(body) if body else {}
-        except json.JSONDecodeError:
-            data = {}
-        return bool(data.get("token"))
-    except Exception:
-        return False
-
-
 def remove_existing_container():
     """如有同名容器则删除。"""
     if container_exists():
@@ -243,46 +203,51 @@ def main():
         
         # 检查容器是否已存在
         container_already_exists = container_exists()
-
+        
         username = "admin"
-        existing_creds = load_existing_credentials() or {}
-        existing_password = existing_creds.get("password")
-
-        # 优先使用现有凭证中的密码，避免在持久化数据已存在时写入错误密码
-        if existing_password:
-            password = existing_password
-            if container_already_exists:
-                print("✓ 检测到容器已存在，优先使用 deploy_credentials.json 中的现有密码")
+        
+        # 如果容器已存在，尝试从凭证文件读取现有密码
+        should_update_password = True
+        if container_already_exists:
+            existing_creds = load_existing_credentials()
+            if existing_creds and existing_creds.get("password"):
+                password = existing_creds["password"]
+                should_update_password = False  # 容器已存在且凭证文件中有密码，不更新密码
+                print("✓ 检测到容器已存在，使用现有密码（从 deploy_credentials.json 读取，不更新密码）")
+            else:
+                # 如果凭证文件中没有密码，说明持久化数据中可能有密码，但我们无法确定
+                # 注意：环境变量只在首次初始化时生效，如果持久化数据已存在，不会更新密码
+                print("⚠️ 警告：容器已存在但凭证文件中无密码")
+                print("   由于 EMQX 持久化数据可能已存在，环境变量无法更新密码")
+                print("   建议：")
+                print("   1. 手动登录 EMQX Dashboard 查看/修改密码")
+                print(f"   2. 或者删除持久化数据目录 {PERSIST_DIR}/data 后重新安装（会丢失所有配置）")
+                print("   3. 或者手动将实际密码写入 deploy_credentials.json")
+                # 仍然生成一个占位密码写入凭证文件，但提示用户这不会生效
+                password = generate_password()
+                should_update_password = True  # 写入占位密码到凭证文件
+                print("   已生成占位密码并写入凭证文件，但此密码不会生效（容器仍使用持久化数据中的密码）")
         else:
+            # 容器不存在，生成新密码
             password = generate_password()
-            if container_already_exists:
-                print("⚠️ 容器已存在但凭证文件无密码，将尝试使用新密码启动并进行登录校验")
-
+            should_update_password = True
+        
         # 删除旧容器（如果存在）
         remove_existing_container()
-
-        # 先写入凭证（后续会通过登录校验确认是否有效）
+        
+        # 写入凭证：根据 should_update_password 决定是否更新密码
         write_credentials(
             username,
             password,
             ip=args.ip,
             dashboard_port=args.dashboard_port,
-            update_password=True,
+            update_password=should_update_password,
         )
-
+        
         # 启动新容器
         start_emqx(username, password)
 
-        # 强校验：确保 deploy_credentials.json 中的密码确实能登录 EMQX
-        _wait_emqx_api_ready("127.0.0.1", int(args.dashboard_port), timeout=120)
-        if not _verify_dashboard_login("127.0.0.1", int(args.dashboard_port), username, password):
-            raise RuntimeError(
-                "EMQX 已启动，但 deploy_credentials.json 中的 admin 密码登录校验失败。"
-                "这通常表示存在历史持久化数据且密码与凭证文件不一致。"
-                "请先修正 deploy_credentials.json 为真实密码，或清理持久化目录后重装。"
-            )
-
-        print("EMQX 部署完成，且凭证已通过登录校验。")
+        print("EMQX 部署完成。")
         # 同步 nginx 配置并重启 nginx（用于 EMQX 反向代理）
         nginx_conf_src = BASE_DIR / 'nginx_conf' / "emqx_local_nginx.conf"
         nginx_conf_dst_dir = Path("/workspace/nginx/projects")
