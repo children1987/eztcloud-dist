@@ -293,34 +293,63 @@ def generate_password(length: int = 24) -> str:
 def get_or_create_internal_users():
     """
     获取或创建 EMQX 内置 MQTT 用户列表。
-    - 优先从 deploy_credentials.json 的 emqx.internal_users 读取
-    - 如不存在，则根据 INTERNAL_USER_TEMPLATES 生成随机密码并写回
+    - 已有 deploy_credentials.json 时保留既有密码
+    - 模板中显式声明 password 的用户（如 frontend）使用固定密码
+    - 如果凭证文件缺少模板中的用户，则自动补齐并写回
     """
     payload = load_deploy_credentials()
     emqx_section = payload.get("emqx", {})
 
-    internal_users = emqx_section.get("internal_users")
-    if internal_users:
-        print(f"在 {CREDENTIAL_FILE} 中找到 {len(internal_users)} 个 internal_users。")
-        return internal_users
+    existing_users = emqx_section.get("internal_users")
+    if not isinstance(existing_users, list):
+        existing_users = []
 
+    user_map = {
+        item.get("username"): item
+        for item in existing_users
+        if isinstance(item, dict) and item.get("username")
+    }
     users = []
+    changed = False
+
     for tmpl in INTERNAL_USER_TEMPLATES:
         username = tmpl["username"]
-        pwd = generate_password()
+        existing = user_map.get(username)
+        if existing:
+            user = dict(existing)
+            if tmpl.get("password") and user.get("password") != tmpl["password"]:
+                user["password"] = tmpl["password"]
+                changed = True
+            user.setdefault("is_superuser", tmpl.get("is_superuser", False))
+            users.append(user)
+            continue
+
         users.append(
             {
                 "username": username,
-                "password": pwd,
+                "password": tmpl.get("password") or generate_password(),
                 "is_superuser": tmpl.get("is_superuser", False),
             }
         )
+        changed = True
 
-    emqx_section["internal_users"] = users
-    payload["emqx"] = emqx_section
-    save_deploy_credentials(payload)
+    template_usernames = {tmpl["username"] for tmpl in INTERNAL_USER_TEMPLATES}
+    extra_users = [
+        item
+        for item in existing_users
+        if isinstance(item, dict) and item.get("username") not in template_usernames
+    ]
+    if extra_users:
+        users.extend(extra_users)
 
-    print(f"已根据模板初始化 {len(users)} 个 internal_users，密码已随机生成并写入 {CREDENTIAL_FILE}。")
+    if changed or users != existing_users:
+        emqx_section["internal_users"] = users
+        payload["emqx"] = emqx_section
+        save_deploy_credentials(payload)
+        print(f"已同步 {len(users)} 个 internal_users 到 {CREDENTIAL_FILE}。")
+    else:
+        print(f"在 {CREDENTIAL_FILE} 中找到 {len(users)} 个 internal_users。")
+
     return users
 
 
@@ -432,10 +461,31 @@ def import_users_from_internal_users(
         conn.request("POST", url, body=json.dumps(payload), headers=headers)
         response = conn.getresponse()
         body = response.read().decode()
-        if response.status not in (200, 201):
-            print(f"导入用户 {username} 失败: {response.status} {body}")
-        else:
+        if response.status in (200, 201):
             print(f"已导入用户 {username}")
+            conn.close()
+            continue
+
+        # EMQX 已存在同名用户时 POST 会失败；改用 PUT 确保密码被同步到模板/凭证文件。
+        if response.status in (400, 409) and (
+            "already" in body.lower()
+            or "exist" in body.lower()
+            or "duplicat" in body.lower()
+        ):
+            conn.close()
+            conn = http.client.HTTPConnection(emqx_server_ip, emqx_server_port)
+            update_url = f"{BASE_URL}/authentication/{auth_id}/users/{username}"
+            conn.request("PUT", update_url, body=json.dumps({"password": password}), headers=headers)
+            update_response = conn.getresponse()
+            update_body = update_response.read().decode()
+            if update_response.status in (200, 204):
+                print(f"已更新用户 {username}")
+            else:
+                print(f"更新用户 {username} 失败: {update_response.status} {update_body}")
+            conn.close()
+            continue
+
+        print(f"导入用户 {username} 失败: {response.status} {body}")
         conn.close()
 
 

@@ -554,32 +554,56 @@ class IswInstaller:
             print("⚠️ 未找到可写入的系统用户凭证。")
 
     def _ensure_mqtt_internal_users(self):
-        """确保 deploy_credentials.json 中有 internal_users（如果不存在则提前生成）。"""
+        """确保 deploy_credentials.json 中有完整的 internal_users。"""
         emqx = self.credentials.get("emqx", {})
-        users = emqx.get("internal_users")
-        if isinstance(users, list) and len(users) > 0:
-            print(f"✓ deploy_credentials.json 中已有 {len(users)} 个 internal_users")
-            return
-        
-        # 如果不存在，提前生成 internal_users（与 init_emqx.py 中的逻辑一致，
-        # 模板统一来源于 INTERNAL_USER_TEMPLATES）
-        print("⚠️ deploy_credentials.json 中未找到 internal_users，提前生成...")
-        # INTERNAL_USER_TEMPLATES 与 init_emqx.py 保持一致
-        internal_user_templates = INTERNAL_USER_TEMPLATES
+        existing_users = emqx.get("internal_users")
+        if not isinstance(existing_users, list):
+            existing_users = []
+
+        user_map = {
+            item.get("username"): item
+            for item in existing_users
+            if isinstance(item, dict) and item.get("username")
+        }
         generated_users = []
-        for tmpl in internal_user_templates:
+        changed = False
+        template_usernames = set()
+
+        for tmpl in INTERNAL_USER_TEMPLATES:
             username = tmpl["username"]
-            pwd = generate_password(24)  # 使用与 init_emqx.py 相同的密码长度
+            template_usernames.add(username)
+            existing = user_map.get(username)
+            if existing:
+                user = dict(existing)
+                if tmpl.get("password") and user.get("password") != tmpl["password"]:
+                    user["password"] = tmpl["password"]
+                    changed = True
+                user.setdefault("is_superuser", tmpl.get("is_superuser", False))
+                generated_users.append(user)
+                continue
+
             generated_users.append({
                 "username": username,
-                "password": pwd,
+                "password": tmpl.get("password") or generate_password(24),
                 "is_superuser": tmpl.get("is_superuser", False),
             })
-        
-        emqx["internal_users"] = generated_users
-        self.credentials["emqx"] = emqx
-        self._save_credentials()
-        print(f"✓ 已生成 {len(generated_users)} 个 internal_users 并保存到 deploy_credentials.json")
+            changed = True
+
+        extra_users = [
+            item
+            for item in existing_users
+            if isinstance(item, dict) and item.get("username") not in template_usernames
+        ]
+        if extra_users:
+            generated_users.extend(extra_users)
+
+        if changed or generated_users != existing_users:
+            emqx["internal_users"] = generated_users
+            self.credentials["emqx"] = emqx
+            self._save_credentials()
+            print(f"✓ 已同步 {len(generated_users)} 个 internal_users 并保存到 deploy_credentials.json")
+        else:
+            print(f"✓ deploy_credentials.json 中已有 {len(generated_users)} 个 internal_users")
 
     def _sync_mqtt_credentials(self):
         emqx = self.credentials.get("emqx", {})
