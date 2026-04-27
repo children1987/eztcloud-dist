@@ -29,7 +29,7 @@ def create_connector(emqx_server_ip, emqx_server_port, api_key, api_secret):
         "tags": [],
         # todo: "http://127.0.0.1" 应取自变量 SITE_BASE_URL
         "url": "http://127.0.0.1:8082/api/emqx_webhook/connection_event/",
-        "headers": {},
+        "headers": {"content-type":"application/json"},
         "connect_timeout": "15s",
         "pool_type": "random",
         "pool_size": 8,
