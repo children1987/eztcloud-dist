@@ -171,8 +171,9 @@ class IswInstaller:
         timeout=None,
     ):
         display = " ".join(cmd)
-        print(f"→ 执行命令: {display}")
+        print(f"→ 执行命令: {display}", flush=True)
         full_env = os.environ.copy()
+        full_env.setdefault("PYTHONUNBUFFERED", "1")
         if env:
             full_env.update(env)
         result = subprocess.run(
@@ -421,7 +422,6 @@ class IswInstaller:
         env_map = self._load_env_map()
         pg = self.credentials.get("postgres", {})
         influx = self.credentials.get("influxdb", {})
-        emqx = self.credentials.get("emqx", {})
         oauth = self.credentials.get("iam_client_eztcloud", {})
 
         def _require_oauth_field(key):
