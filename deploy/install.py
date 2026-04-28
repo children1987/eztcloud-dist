@@ -477,7 +477,7 @@ class IswInstaller:
             "EMQX_API_HOST": env_map.get("EMQX_API_HOST", self.args.ip),
             "EMQX_API_PORT": env_map.get("EMQX_API_PORT", self.args.emqx_api_port),
             "EMQX_API_PROTOCOL": env_map.get("EMQX_API_PROTOCOL", "http"),
-            "EMQX_IPS": env_map.get("EMQX_IPS", self.args.ip),
+            "EMQX_IPS": '127.0.0.1,' + env_map.get("EMQX_IPS", self.args.ip),
             # 提前占位，避免 Django settings 在 init_emqx 之前因缺少变量而报错
             "EMQX_ACCOUNT": env_map.get("EMQX_ACCOUNT", ""),
             "EMQX_PASSWORD": env_map.get("EMQX_PASSWORD", ""),
