@@ -1,0 +1,9 @@
+{
+  "web_site": {
+    "name": "星纵物联AIOT平台"
+  },
+  "systemconfig": {
+    "doc_center_url": "http://docs-milesight.eztcloud.com/",
+    "module_trim": "[\"camera\"]"
+  }
+}
