@@ -4,7 +4,6 @@
 .idea/
 /node_modules/
 /backend/com_server/log
-/backend/medie/
 __pycache__/
 *.env
 /backend/unpackage/
@@ -14,11 +13,11 @@ env/
 /backend/static
 /backend/apps/utils/auth_code/payload_project.json
 /backend/apps/utils/auth_code/payload_system.json
+/backend/media/
 /mqtt_broker/emqx/persist/data/
 /mqtt_broker/emqx/persist/log/
-/mqtt_broker/emqx/emqx.conf
-/mqtt_broker/emqx/acl.conf
 influxdb/
+redis_data/
 /backend/apps/utils/auth_code/dist
 *.spec
 /backend/apps/utils/auth_code/build
